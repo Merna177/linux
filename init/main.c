@@ -262,10 +262,11 @@ early_param("loglevel", loglevel);
 
 #ifdef CONFIG_BLK_DEV_INITRD
 static void * __init get_boot_config_from_initrd(u32 *_size, u32 *_csum)
-{  
+{
 	u32 size, csum;
 	char *data;
 	u32 *hdr;
+
 	if (!initrd_end)
 		return NULL;
 
@@ -313,6 +314,7 @@ static int __init xbc_snprint_cmdline(char *buf, size_t size,
 	char *end = buf + size;
 	const char *val;
 	int ret;
+
 	xbc_node_for_each_key_value(root, knode, val) {
 		ret = xbc_node_compose_key_after(root, knode,
 					xbc_namebuf, XBC_KEYLEN_MAX);
@@ -346,6 +348,7 @@ static char * __init xbc_make_cmdline(const char *key)
 	struct xbc_node *root;
 	char *new_cmdline;
 	int ret, len = 0;
+
 	root = xbc_find_node(key);
 	if (!root)
 		return NULL;
