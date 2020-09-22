@@ -34,6 +34,7 @@
 #include <linux/rseq.h>
 #include <linux/seqlock.h>
 #include <linux/kcsan.h>
+#include "linux/double-fetch-detection.h"
 
 /* task_struct member predeclarations (sorted alphabetically): */
 struct audit_context;
@@ -1314,7 +1315,10 @@ struct task_struct {
 					__mce_reserved : 62;
 	struct callback_head		mce_kill_me;
 #endif
-
+    //needed in double fetch detection buffer to store address ranges 
+   // struct address addresses[100];
+	struct address *addresses;
+    int noRead;
 	/*
 	 * New fields for task_struct should be added above here, so that
 	 * they are included in the randomized portion of task_struct.
@@ -1323,13 +1327,15 @@ struct task_struct {
 
 	/* CPU-specific state of this task: */
 	struct thread_struct		thread;
-
 	/*
 	 * WARNING: on x86, 'thread_struct' contains a variable-sized
 	 * structure.  It *MUST* be at the end of 'task_struct'.
 	 *
 	 * Do not put anything below here!
 	 */
+	
+
+
 };
 
 static inline struct pid *task_pid(struct task_struct *task)

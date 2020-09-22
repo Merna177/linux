@@ -2,6 +2,7 @@
 #include <linux/bitops.h>
 #include <linux/instrumented.h>
 #include <linux/uaccess.h>
+#include "linux/double-fetch-detection.h"
 
 /* out-of-line parts */
 
@@ -13,6 +14,7 @@ unsigned long _copy_from_user(void *to, const void __user *from, unsigned long n
 	if (likely(access_ok(from, n))) {
 		instrument_copy_from_user(to, from, n);
 		res = raw_copy_from_user(to, from, n);
+		addAddress(from,n);
 	}
 	if (unlikely(res))
 		memset(to + (n - res), 0, res);

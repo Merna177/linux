@@ -2,6 +2,7 @@
 #
 # Makefile for some libs needed in the kernel.
 #
+obj-$(CONFIG_DF_DETECTION) += double-fetch-detection.o
 
 ccflags-remove-$(CONFIG_FUNCTION_TRACER) += $(CC_FLAGS_FTRACE)
 
