@@ -1315,12 +1315,11 @@ struct task_struct {
 					__mce_reserved : 62;
 	struct callback_head		mce_kill_me;
 #endif
-    //needed in double fetch detection buffer to store address ranges 
-   // struct address addresses[100];
-#ifdef CONFIG_DF_DETECTION
-	struct df_address_range *addresses;
-    int num_read;
-	int sz;
+ //needed in double fetch detection buffer to store address ranges 
+#ifdef 		CONFIG_DF_DETECTION
+        struct df_address_range *addresses;
+        int num_read;
+        int sz;
 
 #endif
 	/*
