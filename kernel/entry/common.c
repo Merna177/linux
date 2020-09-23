@@ -4,7 +4,7 @@
 #include <linux/entry-common.h>
 #include <linux/livepatch.h>
 #include <linux/audit.h>
-#include "linux/double-fetch-detection.h"
+#include "linux/df-detection.h"
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/syscalls.h>
@@ -26,7 +26,7 @@ static __always_inline void enter_from_user_mode(struct pt_regs *regs)
 
 	CT_WARN_ON(ct_state() != CONTEXT_USER);
 	user_exit_irqoff();
-    startSystemCall();
+    start_system_call();
 	instrumentation_begin();
 	trace_hardirqs_off_finish();
 	instrumentation_end();
@@ -127,7 +127,7 @@ static __always_inline void exit_to_user_mode(void)
 	trace_hardirqs_on_prepare();
 	lockdep_hardirqs_on_prepare(CALLER_ADDR0);
 	instrumentation_end();
-    endSysCall();
+    end_system_call();
 	user_enter_irqoff();
 	arch_exit_to_user_mode();
 	lockdep_hardirqs_on(CALLER_ADDR0);

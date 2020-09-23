@@ -34,7 +34,7 @@
 #include <linux/rseq.h>
 #include <linux/seqlock.h>
 #include <linux/kcsan.h>
-#include "linux/double-fetch-detection.h"
+#include "linux/df-detection.h"
 
 /* task_struct member predeclarations (sorted alphabetically): */
 struct audit_context;
@@ -1317,8 +1317,12 @@ struct task_struct {
 #endif
     //needed in double fetch detection buffer to store address ranges 
    // struct address addresses[100];
-	struct address *addresses;
-    int noRead;
+#ifdef CONFIG_DF_DETECTION
+	struct df_address_range *addresses;
+    int num_read;
+	int sz;
+
+#endif
 	/*
 	 * New fields for task_struct should be added above here, so that
 	 * they are included in the randomized portion of task_struct.
