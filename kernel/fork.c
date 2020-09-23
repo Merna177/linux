@@ -1928,8 +1928,7 @@ static __latent_entropy struct task_struct *copy_process(
 	 * Clear TID on mm_release()?
 	 */
 	p->clear_child_tid = (clone_flags & CLONE_CHILD_CLEARTID) ? args->child_tid : NULL;
-    //initialize no of reads for double fetch problem
-	p->noRead =-1;
+
 	ftrace_graph_init_task(p);
 
 	rt_mutex_init_task(p);
