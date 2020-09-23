@@ -1316,11 +1316,10 @@ struct task_struct {
 	struct callback_head		mce_kill_me;
 #endif
  //needed in double fetch detection buffer to store address ranges 
-#ifdef 		CONFIG_DF_DETECTION
+#ifdef CONFIG_DF_DETECTION
         struct df_address_range *addresses;
         int num_read;
         int sz;
-
 #endif
 	/*
 	 * New fields for task_struct should be added above here, so that
