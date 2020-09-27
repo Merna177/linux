@@ -39,18 +39,10 @@ void end_system_call()
         }
 }
 
-//it returns -1 when it fails to re allocate memory
+//it returns 0 when it fails to re allocate memory
 int reallocate_extra_memory(int sz,int mx_size)
 {
-        return WARN_ON(current->sz > DF_MAX_RECORDS) ? 0 : 1;
-
-        current->addresses= (struct df_address_range*)krealloc(current->addresses,
-                             current->sz*2*sizeof(struct df_address_range),GFP_KERNEL);
-        if (current->addresses == NULL){
-                return -1;
-        }
-        current->sz *= 2; 
-        return 0; 
+        return WARN_ON(sz > mx_size) ? 0 : 1;
 } 
 int is_intersect(struct df_address_range a, struct df_address_range b)
 {  
