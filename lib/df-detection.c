@@ -54,12 +54,12 @@ int is_intersect(struct df_address_range a, struct df_address_range b)
 }
 void detect_intersection()
 {       
-        int i,j;
-        current->df_index=0;
+        int i, j;
+        current->df_index = 0;
         current->pairs = (struct df_pair*)kmalloc_array(DF_INIT_SIZE,sizeof(struct df_pair),GFP_KERNEL);
         if (!current->pairs){
-             pr_err("Having a problem with allocating memory");   
-             return;
+                pr_err("Having a problem with allocating memory");   
+                return;
         }
         current->df_size=DF_INIT_SIZE;
         for (i=0;i<current->num_read;i++){
@@ -68,14 +68,14 @@ void detect_intersection()
                                 continue;
                         if (current->df_index >= current->df_size && reallocate_extra_memory(current->df_size,DF_INIT_SIZE * DF_INIT_SIZE)){
                                 struct df_pair* temp = (struct df_pair*)krealloc(current->pairs,
-                                                 current->df_size*2*sizeof(struct df_pair),GFP_KERNEL);
+                                                        current->df_size*2*sizeof(struct df_pair),GFP_KERNEL);
                                 current->pairs = temp ? temp : current->pairs;
                                 current->df_size = temp ? current->df_size*2 : current->df_size;
                         }
                         if (current->df_index < current->df_size){
-                                    current->pairs[current->df_index].first = &current->addresses[i];
-                                    current->pairs[current->df_index].second = &current->addresses[j];
-                                    current->df_index++;
+                                current->pairs[current->df_index].first = &current->addresses[i];
+                                current->pairs[current->df_index].second = &current->addresses[j];
+                                current->df_index++;
                         }
                 }
         }
