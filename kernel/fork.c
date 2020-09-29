@@ -943,6 +943,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
 #endif
 #ifdef CONFIG_DF_DETECTION
         tsk->addresses = NULL;
+	tsk->pairs = NULL;
 #endif
 	return tsk;
 
