@@ -1,15 +1,15 @@
 #include "linux/df-detection.h"
-#include <linux/audit.h>
 #include <linux/context_tracking.h>
 #include <linux/entry-common.h>
 #include <linux/kernel.h>
 #include <linux/livepatch.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
+#include <linux/stacktrace.h>
 
 void add_address(const void *addr, unsigned long len)
 {
-	if (current->addresses == NULL)
+	if (current->addresses == NULL || current->pairs == NULL)
 		return;
 	if (current->num_read >= current->sz &&
 	    reallocate_extra_memory(current->sz, DF_MAX_RECORDS)) {
@@ -42,18 +42,34 @@ void start_system_call()
 	current->df_index = 0;
 }
 void end_system_call()
-{ 
+{
+	if (current->pairs != NULL) {
+		if (current->df_index) {
+			print_pairs();
+			dump_stack();
+			pr_err("BUG: Intersection Detected \n ");
+		}
+		kfree(current->pairs);
+		current->pairs = NULL;
+		current->df_index = 0;
+		current->df_size = 0;
+	}
 	if (current->addresses != NULL) {
 		current->num_read = 0;
 		current->sz = 0;
 		kfree(current->addresses);
 		current->addresses = NULL;
 	}
-	if (current->pairs != NULL) {
-		kfree(current->pairs);
-		current->pairs = NULL;
-		current->df_index = 0;
-		current->df_size = 0;
+}
+void print_pairs()
+{
+	int i;
+	for (i = 0; i < current->df_index; i++) {
+		pr_err("First %px len %lu \nSecond %px len %lu\n",
+		       current->pairs[i].first->start_address,
+		       current->pairs[i].first->len,
+		       current->pairs[i].second->start_address,
+		       current->pairs[i].second->len);
 	}
 }
 // it returns 0 when it fails to re allocate memory
@@ -73,7 +89,7 @@ int is_intersect(struct df_address_range a, struct df_address_range b)
 }
 void detect_intersection()
 {
-	int i, j;
+	int i;
 	for (i = 0; i < current->num_read; i++) {
 		if (!is_intersect(current->addresses[i],
 				  current->addresses[current->num_read]))
