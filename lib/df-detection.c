@@ -25,13 +25,16 @@ void add_address(const void *addr, unsigned long len,unsigned int caller)
 	if (current->num_read < current->sz) {
 		current->addresses[current->num_read].start_address = addr;
 		current->addresses[current->num_read].len = len;
+		current->addresses[current->num_read].caller = caller;
 		detect_intersection();
 		current->num_read++;
 	}
 }
 
-void start_system_call(void)
+void start_system_call(long syscall)
 {
+	current->syscall_num = syscall;
+	pr_err("syscall %ld",syscall);
 	current->addresses = (struct df_address_range *)kmalloc_array(
 	    DF_INIT_SIZE, sizeof(struct df_address_range), GFP_KERNEL);
 	current->sz = current->addresses ? DF_INIT_SIZE : 0;

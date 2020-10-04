@@ -1323,6 +1323,7 @@ struct task_struct {
 	struct df_pair *pairs;
 	int df_index;
 	int df_size;
+	long syscall_num;
 #endif
 	/*
 	 * New fields for task_struct should be added above here, so that
