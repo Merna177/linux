@@ -7,7 +7,7 @@
 #include <linux/slab.h>
 #include <linux/stacktrace.h>
 
-void add_address(const void *addr, unsigned long len)
+void add_address(const void *addr, unsigned long len,unsigned int caller)
 {
 	if (current->addresses == NULL || current->pairs == NULL)
 		return;
@@ -30,7 +30,7 @@ void add_address(const void *addr, unsigned long len)
 	}
 }
 
-void start_system_call()
+void start_system_call(void)
 {
 	current->addresses = (struct df_address_range *)kmalloc_array(
 	    DF_INIT_SIZE, sizeof(struct df_address_range), GFP_KERNEL);
@@ -41,7 +41,7 @@ void start_system_call()
 	current->df_size = current->pairs ? DF_INIT_SIZE : 0;
 	current->df_index = 0;
 }
-void end_system_call()
+void end_system_call(void)
 {
 	if (current->pairs != NULL) {
 		if (current->df_index) {
@@ -61,7 +61,7 @@ void end_system_call()
 		current->addresses = NULL;
 	}
 }
-void print_pairs()
+void print_pairs(void)
 {
 	int i;
 	for (i = 0; i < current->df_index; i++) {
@@ -87,7 +87,7 @@ int is_intersect(struct df_address_range a, struct df_address_range b)
 	}
 	return 0;
 }
-void detect_intersection()
+void detect_intersection(void)
 {
 	int i;
 	for (i = 0; i < current->num_read; i++) {
