@@ -1315,6 +1315,7 @@ struct task_struct {
 					__mce_reserved : 62;
 	struct callback_head		mce_kill_me;
 #endif
+
  //needed in double fetch detection buffer to store address ranges 
 #ifdef CONFIG_DF_DETECTION
         struct df_address_range *addresses;
@@ -1333,6 +1334,7 @@ struct task_struct {
 
 	/* CPU-specific state of this task: */
 	struct thread_struct		thread;
+
 	/*
 	 * WARNING: on x86, 'thread_struct' contains a variable-sized
 	 * structure.  It *MUST* be at the end of 'task_struct'.
@@ -1340,7 +1342,6 @@ struct task_struct {
 	 * Do not put anything below here!
 	 */
 	
-
 
 };
 
