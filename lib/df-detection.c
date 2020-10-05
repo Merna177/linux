@@ -1,4 +1,5 @@
 #include "linux/df-detection.h"
+#include <asm/syscall.h>
 #include <linux/context_tracking.h>
 #include <linux/entry-common.h>
 #include <linux/kernel.h>
@@ -6,7 +7,7 @@
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/stacktrace.h>
-
+#include <linux/sys.h>
 void add_address(const void *addr, unsigned long len, unsigned long caller)
 {
 	if (current->addresses == NULL || current->pairs == NULL)
@@ -46,9 +47,8 @@ void start_system_call(long syscall)
 void end_system_call(void)
 {
 	if (current->pairs != NULL) {
-		if (current->df_index) {
+		if (current->df_index)
 			report();
-		}
 		kfree(current->pairs);
 		current->pairs = NULL;
 		current->df_index = 0;
@@ -67,7 +67,8 @@ void report(void)
 	pr_err("BUG: Intersection Detected \n ");
 	pr_err("==================================================================\n");
 	if (panic_on_warn) {
-		pr_err("System Call Number: %ld\n", current->syscall_num);
+		pr_err("System Call: %ps\n",
+		       sys_call_table[current->syscall_num]);
 		for (i = 0; i < current->df_index; i++) {
 			pr_err("First %px len %lu Caller %ps \nSecond %px len "
 			       "%lu Caller %ps \n",
