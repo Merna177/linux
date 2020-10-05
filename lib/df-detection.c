@@ -7,7 +7,7 @@
 #include <linux/slab.h>
 #include <linux/stacktrace.h>
 
-void add_address(const void *addr, unsigned long len,unsigned int caller)
+void add_address(const void *addr, unsigned long len, unsigned long caller)
 {
 	if (current->addresses == NULL || current->pairs == NULL)
 		return;
@@ -34,7 +34,6 @@ void add_address(const void *addr, unsigned long len,unsigned int caller)
 void start_system_call(long syscall)
 {
 	current->syscall_num = syscall;
-	pr_err("syscall %ld",syscall);
 	current->addresses = (struct df_address_range *)kmalloc_array(
 	    DF_INIT_SIZE, sizeof(struct df_address_range), GFP_KERNEL);
 	current->sz = current->addresses ? DF_INIT_SIZE : 0;
@@ -48,9 +47,7 @@ void end_system_call(void)
 {
 	if (current->pairs != NULL) {
 		if (current->df_index) {
-			print_pairs();
-			dump_stack();
-			pr_err("BUG: Intersection Detected \n ");
+			report();
 		}
 		kfree(current->pairs);
 		current->pairs = NULL;
@@ -64,17 +61,27 @@ void end_system_call(void)
 		current->addresses = NULL;
 	}
 }
-void print_pairs(void)
+void report(void)
 {
 	int i;
-	for (i = 0; i < current->df_index; i++) {
-		pr_err("First %px len %lu \nSecond %px len %lu\n",
-		       current->pairs[i].first->start_address,
-		       current->pairs[i].first->len,
-		       current->pairs[i].second->start_address,
-		       current->pairs[i].second->len);
+	pr_err("BUG: Intersection Detected \n ");
+	pr_err("==================================================================\n");
+	if (panic_on_warn) {
+		pr_err("System Call Number: %ld\n", current->syscall_num);
+		for (i = 0; i < current->df_index; i++) {
+			pr_err("First %px len %lu Caller %ps \nSecond %px len "
+			       "%lu Caller %ps \n",
+			       current->pairs[i].first->start_address,
+			       current->pairs[i].first->len,
+			       current->pairs[i].first->caller,
+			       current->pairs[i].second->start_address,
+			       current->pairs[i].second->len,
+			       current->pairs[i].second->caller);
+		}
+		pr_err("==================================================================\n");
 	}
 }
+
 // it returns 0 when it fails to re allocate memory
 int reallocate_extra_memory(int sz, int mx_size)
 {

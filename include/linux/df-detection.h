@@ -7,15 +7,16 @@
 struct df_address_range{
         const void *start_address;
         unsigned long len;
+        unsigned long caller;
 };
 struct df_pair{
         struct df_address_range *first;
         struct df_address_range *second;
 };
-void add_address(const void* addr,unsigned long len);
-void start_system_call(void);
+void add_address(const void* addr,unsigned long len,unsigned long caller);
+void start_system_call(long syscall);
 void end_system_call(void);
-void print_pairs(void);
+void report(void);
 int reallocate_extra_memory(int sz, int max_size);
 void detect_intersection(void);
 int is_intersect(struct df_address_range a, struct df_address_range b);
