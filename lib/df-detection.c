@@ -34,6 +34,8 @@ void add_address(const void *addr, unsigned long len, unsigned long caller)
 
 void start_system_call(long syscall)
 {
+	if (syscall == 54 || syscall == 165 || syscall == 16)
+		return;
 	current->syscall_num = syscall;
 	current->addresses = (struct df_address_range *)kmalloc_array(
 	    DF_INIT_SIZE, sizeof(struct df_address_range), GFP_KERNEL);
@@ -64,22 +66,27 @@ void end_system_call(void)
 void report(void)
 {
 	int i;
-	pr_err("BUG: Intersection Detected \n ");
-	pr_err("==================================================================\n");
+	pr_err("BUG: Intersection Detected at syscall: %pSR\n ",
+	       sys_call_table[current->syscall_num]);
+	pr_err("==============================================================="
+	       "===\n");
+	pr_err("syscall number %ld  System Call: %pSR\n", current->syscall_num,
+	       sys_call_table[current->syscall_num]);
+	for (i = 0; i < current->df_index; i++) {
+		pr_err("First %px len %lu Caller %pSR \nSecond %px len "
+		       "%lu Caller %pSR \n",
+		       current->pairs[i].first->start_address,
+		       current->pairs[i].first->len,
+		       current->pairs[i].first->caller,
+		       current->pairs[i].second->start_address,
+		       current->pairs[i].second->len,
+		       current->pairs[i].second->caller);
+	}
+	pr_err("==============================================================="
+	       "===\n");
 	if (panic_on_warn) {
-		pr_err("System Call: %ps\n",
-		       sys_call_table[current->syscall_num]);
-		for (i = 0; i < current->df_index; i++) {
-			pr_err("First %px len %lu Caller %ps \nSecond %px len "
-			       "%lu Caller %ps \n",
-			       current->pairs[i].first->start_address,
-			       current->pairs[i].first->len,
-			       current->pairs[i].first->caller,
-			       current->pairs[i].second->start_address,
-			       current->pairs[i].second->len,
-			       current->pairs[i].second->caller);
-		}
-		pr_err("==================================================================\n");
+		panic("panic_on_warn set. \n");
+		panic_on_warn = 0;
 	}
 }
 
