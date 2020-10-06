@@ -11,10 +11,11 @@
 #include <linux/types.h>
 void add_address(const void *addr, size_t len, unsigned long caller)
 {
-	if (current->addresses == NULL || current->pairs == NULL)
+	if (current->addresses == NULL || current->pairs == NULL ||
+	    addr > TASK_SIZE)
 		return;
 	if (current->num_read >= current->sz &&
-	    reallocate_extra_memory(current->sz, DF_MAX_RECORDS)) {
+	    !WARN_ON(current->sz > DF_MAX_RECORDS)) {
 		struct df_address_range *temp =
 		    (struct df_address_range *)krealloc(
 			current->addresses,
@@ -28,6 +29,8 @@ void add_address(const void *addr, size_t len, unsigned long caller)
 		current->addresses[current->num_read].start_address = addr;
 		current->addresses[current->num_read].len = len;
 		current->addresses[current->num_read].caller = caller;
+		current->addresses[current->num_read].stack =
+		    df_save_stack(GFP_NOWAIT);
 		detect_intersection();
 		current->num_read++;
 	}
@@ -35,8 +38,6 @@ void add_address(const void *addr, size_t len, unsigned long caller)
 
 void start_system_call(long syscall)
 {
-	if (syscall == 54 || syscall == 165 || syscall == 16)
-		return;
 	current->syscall_num = syscall;
 	current->addresses = (struct df_address_range *)kmalloc_array(
 	    DF_INIT_SIZE, sizeof(struct df_address_range), GFP_KERNEL);
@@ -64,8 +65,11 @@ void end_system_call(void)
 		current->addresses = NULL;
 	}
 }
+
 void report(void)
 {
+	if (!check_valid_detection())
+		return;
 	int i;
 	pr_err("BUG: Intersection Detected at syscall: %pSR\n ",
 	       sys_call_table[current->syscall_num]);
@@ -81,19 +85,53 @@ void report(void)
 		       current->pairs[i].second->start_address,
 		       current->pairs[i].second->len,
 		       current->pairs[i].second->caller);
+		if (current->pairs[i].first->stack) {
+			unsigned long *entries;
+			unsigned int nr_entries;
+			pr_err("Stack for the first address range\n");
+			nr_entries = stack_depot_fetch(
+			    current->pairs[i].first->stack, &entries);
+			stack_trace_print(entries, nr_entries, 0);
+		} else {
+			pr_err("(stack of first addrees range is not "
+			       "available)\n");
+		}
+		if (current->pairs[i].second->stack) {
+			unsigned long *entries;
+			unsigned int nr_entries;
+			pr_err("Stack for the second address range\n");
+			nr_entries = stack_depot_fetch(
+			    current->pairs[i].second->stack, &entries);
+			stack_trace_print(entries, nr_entries, 0);
+		} else {
+			pr_err("(stack of second addrees range is not "
+			       "available)\n");
+		}
 	}
 	pr_err("==================================================================\n");
-	if (panic_on_warn) {
-		panic("panic_on_warn set. \n");
+	/*if (panic_on_warn) {
 		panic_on_warn = 0;
-	}
+		panic("panic_on_warn set. \n");
+	}*/
+}
+// return zero if detecting a false DF
+bool check_valid_detection(void)
+{
+	if (current->syscall_num == 54 || current->syscall_num == 165 ||
+	    current->syscall_num == 16 || current->syscall_num == 88)
+		return false;
+	return true;
+}
+depot_stack_handle_t df_save_stack(gfp_t flags)
+{
+	unsigned long entries[STACK_DEPTH];
+	unsigned int nr_entries;
+
+	nr_entries = stack_trace_save(entries, ARRAY_SIZE(entries), 0);
+	nr_entries = filter_irq_stacks(entries, nr_entries);
+	return stack_depot_save(entries, nr_entries, flags);
 }
 
-// it returns 0 when it fails to re allocate memory
-int reallocate_extra_memory(int sz, int mx_size)
-{
-	return WARN_ON(sz > mx_size) ? 0 : 1;
-}
 int is_intersect(struct df_address_range a, struct df_address_range b)
 {
 	if ((a.start_address <= b.start_address &&
@@ -112,8 +150,8 @@ void detect_intersection(void)
 				  current->addresses[current->num_read]))
 			continue;
 		if (current->df_index >= current->df_size &&
-		    reallocate_extra_memory(current->df_size,
-					    DF_MAX_RECORDS * DF_MAX_RECORDS)) {
+		    !WARN_ON(current->df_size >
+			     DF_MAX_RECORDS * DF_MAX_RECORDS)) {
 			struct df_pair *temp = (struct df_pair *)krealloc(
 			    current->pairs,
 			    current->df_size * 2 * sizeof(struct df_pair),
