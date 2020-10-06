@@ -8,7 +8,8 @@
 #include <linux/slab.h>
 #include <linux/stacktrace.h>
 #include <linux/sys.h>
-void add_address(const void *addr, unsigned long len, unsigned long caller)
+#include <linux/types.h>
+void add_address(const void *addr, size_t len, unsigned long caller)
 {
 	if (current->addresses == NULL || current->pairs == NULL)
 		return;
@@ -68,8 +69,7 @@ void report(void)
 	int i;
 	pr_err("BUG: Intersection Detected at syscall: %pSR\n ",
 	       sys_call_table[current->syscall_num]);
-	pr_err("==============================================================="
-	       "===\n");
+	pr_err("==================================================================\n");
 	pr_err("syscall number %ld  System Call: %pSR\n", current->syscall_num,
 	       sys_call_table[current->syscall_num]);
 	for (i = 0; i < current->df_index; i++) {
@@ -82,8 +82,7 @@ void report(void)
 		       current->pairs[i].second->len,
 		       current->pairs[i].second->caller);
 	}
-	pr_err("==============================================================="
-	       "===\n");
+	pr_err("==================================================================\n");
 	if (panic_on_warn) {
 		panic("panic_on_warn set. \n");
 		panic_on_warn = 0;

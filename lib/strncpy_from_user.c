@@ -10,6 +10,7 @@
 
 #include <asm/byteorder.h>
 #include <asm/word-at-a-time.h>
+#include "linux/df-detection.h"
 
 #ifdef CONFIG_HAVE_EFFICIENT_UNALIGNED_ACCESS
 #define IS_UNALIGNED(src, dst)	0
@@ -99,6 +100,7 @@ long strncpy_from_user(char *dst, const char __user *src, long count)
 	unsigned long max_addr, src_addr;
 
 	might_fault();
+	add_address(src, count, _RET_IP_);
 	if (unlikely(count <= 0))
 		return 0;
 

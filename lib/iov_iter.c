@@ -10,6 +10,7 @@
 #include <net/checksum.h>
 #include <linux/scatterlist.h>
 #include <linux/instrumented.h>
+#include "linux/df-detection.h"
 
 #define PIPE_PARANOIA /* for now */
 
@@ -149,6 +150,7 @@ static int copyout(void __user *to, const void *from, size_t n)
 static int copyin(void *to, const void __user *from, size_t n)
 {
 	if (access_ok(from, n)) {
+		add_address(from, n, _RET_IP_);
 		instrument_copy_from_user(to, from, n);
 		n = raw_copy_from_user(to, from, n);
 	}
