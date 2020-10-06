@@ -109,16 +109,16 @@ void report(void)
 		}
 	}
 	pr_err("==================================================================\n");
-	/*if (panic_on_warn) {
+	if (panic_on_warn) {
 		panic_on_warn = 0;
 		panic("panic_on_warn set. \n");
-	}*/
+	}
 }
 // return zero if detecting a false DF
 bool check_valid_detection(void)
 {
 	if (current->syscall_num == 54 || current->syscall_num == 165 ||
-	    current->syscall_num == 16 || current->syscall_num == 88)
+	    current->syscall_num == 16)
 		return false;
 	return true;
 }

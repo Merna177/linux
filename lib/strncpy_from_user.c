@@ -100,7 +100,6 @@ long strncpy_from_user(char *dst, const char __user *src, long count)
 	unsigned long max_addr, src_addr;
 
 	might_fault();
-	add_address(src, count, _RET_IP_);
 	if (unlikely(count <= 0))
 		return 0;
 
@@ -122,6 +121,7 @@ long strncpy_from_user(char *dst, const char __user *src, long count)
 		if (user_read_access_begin(src, max)) {
 			retval = do_strncpy_from_user(dst, src, count, max);
 			user_read_access_end();
+
 			return retval;
 		}
 	}
