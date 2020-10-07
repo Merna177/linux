@@ -121,8 +121,7 @@ void report(void)
 			panic_on_warn = 0;
 			panic("panic_on_warn set. \n");
 		}
-	}
-	
+	}	
 }
 int filter_stack(const unsigned long stack_entries[], int num_entries)
 {
