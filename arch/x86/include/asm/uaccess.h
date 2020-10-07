@@ -11,6 +11,7 @@
 #include <asm/page.h>
 #include <asm/smap.h>
 #include <asm/extable.h>
+#include "linux/df-detection.h"
 
 /*
  * The fs value determines whether argument validity checking should be
@@ -175,6 +176,7 @@ extern int __get_user_bad(void);
 	register __inttype(*(ptr)) __val_gu asm("%"_ASM_DX);		\
 	__chk_user_ptr(ptr);						\
 	might_fault();							\
+	add_address(ptr, sizeof(*(ptr)), _RET_IP_);			\
 	asm volatile("call __get_user_%P4"				\
 		     : "=a" (__ret_gu), "=r" (__val_gu),		\
 			ASM_CALL_CONSTRAINT				\

@@ -21,6 +21,7 @@ void start_system_call(long syscall);
 void end_system_call(void);
 depot_stack_handle_t df_save_stack(gfp_t flags);
 void report(void);
+int filter_stack(const unsigned long stack_entries[], int num_entries);
 bool check_valid_detection(void);
 void detect_intersection(void);
 int is_intersect(struct df_address_range a, struct df_address_range b);

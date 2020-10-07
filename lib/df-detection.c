@@ -71,12 +71,43 @@ void report(void)
 	if (!check_valid_detection())
 		return;
 	int i;
-	pr_err("BUG: Intersection Detected at syscall: %pSR\n ",
-	       sys_call_table[current->syscall_num]);
-	pr_err("==================================================================\n");
-	pr_err("syscall number %ld  System Call: %pSR\n", current->syscall_num,
-	       sys_call_table[current->syscall_num]);
+	unsigned long *first_entries;
+	unsigned int first_nr_entries;
+	unsigned long *second_entries;
+	unsigned int second_nr_entries;
+	unsigned long first_frame = 0;
+	unsigned long second_frame = 0;
+
 	for (i = 0; i < current->df_index; i++) {
+		if (current->pairs[i].first->stack &&
+		    current->pairs[i].second->stack) {
+			first_nr_entries = stack_depot_fetch(
+			    current->pairs[i].first->stack, &first_entries);
+			second_nr_entries = stack_depot_fetch(
+			    current->pairs[i].second->stack, &second_entries);
+			int first_index =
+			    filter_stack(first_entries, first_nr_entries);
+			int second_index =
+			    filter_stack(second_entries, second_nr_entries);
+			first_frame = first_entries[first_index];
+			second_frame = second_entries[second_index];
+			pr_err("BUG: Intersection Detected at syscall: %pSR  "
+			       "First Frame %ps Second Frame %ps\n ",
+			       sys_call_table[current->syscall_num],
+			       first_frame, second_frame);
+			pr_err("==================================================================\n");
+			pr_err("======= First Address Range Stack =======");
+			stack_trace_print(first_entries, first_nr_entries, 0);
+			pr_err("======= Second Address Range Stack =======");
+			stack_trace_print(second_entries, second_nr_entries, 0);
+		} else {
+			pr_err("BUG: Intersection Detected at syscall: %pSR\n ",
+			       sys_call_table[current->syscall_num]);
+			pr_err("==================================================================\n");
+		}
+		pr_err("syscall number %ld  System Call: %pSR\n",
+		       current->syscall_num,
+		       sys_call_table[current->syscall_num]);
 		pr_err("First %px len %lu Caller %pSR \nSecond %px len "
 		       "%lu Caller %pSR \n",
 		       current->pairs[i].first->start_address,
@@ -85,35 +116,35 @@ void report(void)
 		       current->pairs[i].second->start_address,
 		       current->pairs[i].second->len,
 		       current->pairs[i].second->caller);
-		if (current->pairs[i].first->stack) {
-			unsigned long *entries;
-			unsigned int nr_entries;
-			pr_err("Stack for the first address range\n");
-			nr_entries = stack_depot_fetch(
-			    current->pairs[i].first->stack, &entries);
-			stack_trace_print(entries, nr_entries, 0);
-		} else {
-			pr_err("(stack of first addrees range is not "
-			       "available)\n");
-		}
-		if (current->pairs[i].second->stack) {
-			unsigned long *entries;
-			unsigned int nr_entries;
-			pr_err("Stack for the second address range\n");
-			nr_entries = stack_depot_fetch(
-			    current->pairs[i].second->stack, &entries);
-			stack_trace_print(entries, nr_entries, 0);
-		} else {
-			pr_err("(stack of second addrees range is not "
-			       "available)\n");
+		pr_err("==================================================================\n");
+		if (panic_on_warn) {
+			panic_on_warn = 0;
+			panic("panic_on_warn set. \n");
 		}
 	}
-	pr_err("==================================================================\n");
-	if (panic_on_warn) {
-		panic_on_warn = 0;
-		panic("panic_on_warn set. \n");
-	}
+	
 }
+int filter_stack(const unsigned long stack_entries[], int num_entries)
+{
+	char buf[64];
+	int len, indx;
+	/*we are not interested in first 2 entries as they are always
+	 * add_address & df_save_stack*/
+	for (indx = 2; indx < num_entries; indx++) {
+		len = scnprintf(buf, sizeof(buf), "%ps",
+				(void *)stack_entries[indx]);
+
+		if (strnstr(buf, "copy_from_user", len) ||
+		    strnstr(buf, "copyin", len) ||
+		    strnstr(buf, "strncpy_from_user", len) ||
+		    strnstr(buf, "get_user", len))
+			continue;
+		break;
+	}
+
+	return indx == num_entries ? 0 : indx;
+}
+
 // return zero if detecting a false DF
 bool check_valid_detection(void)
 {
