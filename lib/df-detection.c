@@ -14,8 +14,12 @@ void add_address(const void *addr, size_t len, unsigned long caller)
 	if (current->addresses == NULL || current->pairs == NULL ||
 	    addr > TASK_SIZE)
 		return;
+	char buf[64];
+	int size;
+	size = scnprintf(buf, sizeof(buf), "%ps", caller);
 	/*ignore cases based on input(pointer and length)*/
-	if (len > MAX_LEN || addr == 0)
+	if (len > MAX_LEN || addr == 0 ||
+	    strnstr(buf, "copy_from_user_nmi", size))
 		return;
 	if (current->num_read >= current->sz &&
 	    !WARN_ON(current->sz > DF_MAX_RECORDS)) {
