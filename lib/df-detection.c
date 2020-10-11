@@ -100,6 +100,16 @@ void report(void)
 			    filter_stack(second_entries, second_nr_entries);
 			first_frame = first_entries[first_index];
 			second_frame = second_entries[second_index];
+			char first_buf[64], second_buf[64];
+			int first_len, second_len;
+			/*check if this bug happent in perf_copy_attr*/
+			first_len = scnprintf(first_buf, sizeof(first_buf),
+					      "%ps", (void *)first_frame);
+			second_len = scnprintf(second_buf, sizeof(second_buf),
+					       "%ps", (void *)second_frame);
+			if (strnstr(first_buf, "perf_copy_attr", first_len) &&
+			    strnstr(second_buf, "perf_copy_attr", second_len))
+				continue;
 			pr_err("BUG: multi-read in %ps  "
 			       "between %ps and %ps\n ",
 			       sys_call_table[current->syscall_num],
