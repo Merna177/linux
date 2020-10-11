@@ -14,6 +14,9 @@ void add_address(const void *addr, size_t len, unsigned long caller)
 	if (current->addresses == NULL || current->pairs == NULL ||
 	    addr > TASK_SIZE)
 		return;
+	/*ignore cases based on input(pointer and length)*/
+	if (len > MAX_LEN || addr == 0)
+		return;
 	if (current->num_read >= current->sz &&
 	    !WARN_ON(current->sz > DF_MAX_RECORDS)) {
 		struct df_address_range *temp =
@@ -79,49 +82,55 @@ void report(void)
 	unsigned long second_frame = 0;
 
 	for (i = 0; i < current->df_index; i++) {
-		if (current->pairs[i].first->stack &&
-		    current->pairs[i].second->stack) {
+		if (current->addresses[current->pairs[i].first].stack &&
+		    current->addresses[current->pairs[i].second].stack) {
 			first_nr_entries = stack_depot_fetch(
-			    current->pairs[i].first->stack, &first_entries);
+			    current->addresses[current->pairs[i].first].stack,
+			    &first_entries);
 			second_nr_entries = stack_depot_fetch(
-			    current->pairs[i].second->stack, &second_entries);
+			    current->addresses[current->pairs[i].second].stack,
+			    &second_entries);
 			int first_index =
 			    filter_stack(first_entries, first_nr_entries);
 			int second_index =
 			    filter_stack(second_entries, second_nr_entries);
 			first_frame = first_entries[first_index];
 			second_frame = second_entries[second_index];
-			pr_err("BUG: Intersection Detected at syscall: %pSR  "
-			       "First Frame %ps Second Frame %ps\n ",
+			pr_err("BUG: multi-read in %ps  "
+			       "between %ps and %ps\n ",
 			       sys_call_table[current->syscall_num],
 			       first_frame, second_frame);
-			pr_err("==================================================================\n");
+			pr_err("==============================================="
+			       "===================\n");
 			pr_err("======= First Address Range Stack =======");
 			stack_trace_print(first_entries, first_nr_entries, 0);
 			pr_err("======= Second Address Range Stack =======");
 			stack_trace_print(second_entries, second_nr_entries, 0);
 		} else {
-			pr_err("BUG: Intersection Detected at syscall: %pSR\n ",
+			pr_err("BUG: Intersection Detected at syscall: %ps\n ",
 			       sys_call_table[current->syscall_num]);
-			pr_err("==================================================================\n");
+			pr_err("==============================================="
+			       "===================\n");
 		}
 		pr_err("syscall number %ld  System Call: %pSR\n",
 		       current->syscall_num,
 		       sys_call_table[current->syscall_num]);
-		pr_err("First %px len %lu Caller %pSR \nSecond %px len "
-		       "%lu Caller %pSR \n",
-		       current->pairs[i].first->start_address,
-		       current->pairs[i].first->len,
-		       current->pairs[i].first->caller,
-		       current->pairs[i].second->start_address,
-		       current->pairs[i].second->len,
-		       current->pairs[i].second->caller);
-		pr_err("==================================================================\n");
+		pr_err(
+		    "First %px len %lu Caller %pSR \nSecond %px len "
+		    "%lu Caller %pSR \n",
+		    current->addresses[current->pairs[i].first].start_address,
+		    current->addresses[current->pairs[i].first].len,
+		    current->addresses[current->pairs[i].first].caller,
+		    current->addresses[current->pairs[i].second].start_address,
+		    current->addresses[current->pairs[i].second].len,
+		    current->addresses[current->pairs[i].second].caller);
+		pr_err("======================================================="
+		       "===========\n");
 		if (panic_on_warn) {
 			panic_on_warn = 0;
 			panic("panic_on_warn set. \n");
 		}
-	}	
+	}
 }
 int filter_stack(const unsigned long stack_entries[], int num_entries)
 {
@@ -148,7 +157,7 @@ int filter_stack(const unsigned long stack_entries[], int num_entries)
 bool check_valid_detection(void)
 {
 	if (current->syscall_num == 54 || current->syscall_num == 165 ||
-	    current->syscall_num == 16)
+	    current->syscall_num == 16 || current->syscall_num == 47)
 		return false;
 	return true;
 }
@@ -191,10 +200,9 @@ void detect_intersection(void)
 			    temp ? current->df_size * 2 : current->df_size;
 		}
 		if (current->df_index < current->df_size) {
-			current->pairs[current->df_index].first =
-			    &current->addresses[i];
+			current->pairs[current->df_index].first = i;
 			current->pairs[current->df_index].second =
-			    &current->addresses[current->num_read];
+			    current->num_read;
 			current->df_index++;
 		}
 	}
