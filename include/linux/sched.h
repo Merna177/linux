@@ -1325,6 +1325,7 @@ struct task_struct {
 	int df_index;
 	int df_size;
 	long syscall_num;
+	bool df_enable;
 #endif
 	/*
 	 * New fields for task_struct should be added above here, so that

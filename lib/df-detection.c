@@ -166,7 +166,8 @@ int filter_stack(const unsigned long stack_entries[], int num_entries)
 
 	return indx == num_entries ? 0 : indx;
 }
-/*skipping systemcalls: (setsockopt, mount recvmsg ) for now because they are causing reports at boot time*/
+/*skipping systemcalls: (setsockopt, mount recvmsg ) for now because they are
+ * causing reports at boot time*/
 // return zero if detecting a false DF
 bool check_valid_detection(void)
 {
@@ -225,8 +226,24 @@ static int df_open(struct inode *inode, struct file *filep)
 {
 	return nonseekable_open(inode, filep);
 }
+static long df_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
+{
+	switch (cmd) {
+	case DF_ENABLE:
+		/* Enable DF for the current task.*/
+		current->df_enable = true;
+		return 0;
+	case DF_DISABLE:
+		current->df_enable = false;
+		return 0;
+	default:
+		return -ENOTTY;
+	}
+}
 static const struct file_operations df_fops = {
     .open = df_open,
+    .unlocked_ioctl = df_ioctl,
+    .compat_ioctl = df_ioctl,
 };
 static int __init df_detection_init(void)
 {

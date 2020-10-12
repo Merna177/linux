@@ -7,6 +7,8 @@
 #define DF_MAX_RECORDS 1024
 #define MAX_LEN 1 << 20
 #define STACK_DEPTH 64
+#define DF_ENABLE			_IO('c', 254)
+#define DF_DISABLE			_IO('c', 255)
 struct df_address_range{
         const void *start_address;
         unsigned long len;
