@@ -1,9 +1,9 @@
 #include "linux/df-detection.h"
 #include <asm/syscall.h>
-#include <linux/context_tracking.h>
-#include <linux/entry-common.h>
+#include <linux/debugfs.h>
+#include <linux/fs.h>
+#include <linux/init.h>
 #include <linux/kernel.h>
-#include <linux/livepatch.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/stacktrace.h>
@@ -42,7 +42,6 @@ void add_address(const void *addr, size_t len, unsigned long caller)
 		current->num_read++;
 	}
 }
-
 void start_system_call(long syscall)
 {
 	current->syscall_num = syscall;
@@ -159,7 +158,8 @@ int filter_stack(const unsigned long stack_entries[], int num_entries)
 		if (strnstr(buf, "copy_from_user", len) ||
 		    strnstr(buf, "copyin", len) ||
 		    strnstr(buf, "strncpy_from_user", len) ||
-		    strnstr(buf, "get_user", len))
+		    strnstr(buf, "get_user", len) ||
+		    strnstr(buf, "memdup_user", len))
 			continue;
 		break;
 	}
@@ -221,3 +221,17 @@ void detect_intersection(void)
 		}
 	}
 }
+static int df_open(struct inode *inode, struct file *filep)
+{
+	return nonseekable_open(inode, filep);
+}
+static const struct file_operations df_fops = {
+    .open = df_open,
+};
+static int __init df_detection_init(void)
+{
+	debugfs_create_file_unsafe("df_detection", 0600, NULL, NULL, &df_fops);
+
+	return 0;
+}
+device_initcall(df_detection_init);
