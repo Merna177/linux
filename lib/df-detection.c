@@ -166,12 +166,12 @@ int filter_stack(const unsigned long stack_entries[], int num_entries)
 
 	return indx == num_entries ? 0 : indx;
 }
-
+/*skipping systemcalls: (setsockopt, mount recvmsg ) for now because they are causing reports at boot time*/
 // return zero if detecting a false DF
 bool check_valid_detection(void)
 {
 	if (current->syscall_num == 54 || current->syscall_num == 165 ||
-	    current->syscall_num == 16 || current->syscall_num == 47)
+	    current->syscall_num == 47)
 		return false;
 	return true;
 }

@@ -5,7 +5,7 @@
 #include <linux/stackdepot.h>
 #define DF_INIT_SIZE 16
 #define DF_MAX_RECORDS 1024
-#define MAX_LEN 1000000
+#define MAX_LEN 1 << 20
 #define STACK_DEPTH 64
 struct df_address_range{
         const void *start_address;
