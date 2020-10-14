@@ -1918,6 +1918,7 @@ static __latent_entropy struct task_struct *copy_process(
 
 	retval = -ENOMEM;
 	p = dup_task_struct(current, node);
+	p->df_enable = false;
 	if (!p)
 		goto fork_out;
 

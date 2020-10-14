@@ -44,19 +44,21 @@ void add_address(const void *addr, size_t len, unsigned long caller)
 }
 void start_system_call(long syscall)
 {
-	current->syscall_num = syscall;
-	current->addresses = (struct df_address_range *)kmalloc_array(
-	    DF_INIT_SIZE, sizeof(struct df_address_range), GFP_KERNEL);
-	current->sz = current->addresses ? DF_INIT_SIZE : 0;
-	current->num_read = 0;
-	current->pairs = (struct df_pair *)kmalloc_array(
-	    DF_INIT_SIZE, sizeof(struct df_pair), GFP_KERNEL);
-	current->df_size = current->pairs ? DF_INIT_SIZE : 0;
-	current->df_index = 0;
+	if (current->df_enable) {
+		current->syscall_num = syscall;
+		current->addresses = (struct df_address_range *)kmalloc_array(
+		    DF_INIT_SIZE, sizeof(struct df_address_range), GFP_KERNEL);
+		current->sz = current->addresses ? DF_INIT_SIZE : 0;
+		current->num_read = 0;
+		current->pairs = (struct df_pair *)kmalloc_array(
+		    DF_INIT_SIZE, sizeof(struct df_pair), GFP_KERNEL);
+		current->df_size = current->pairs ? DF_INIT_SIZE : 0;
+		current->df_index = 0;
+	}
 }
 void end_system_call(void)
 {
-	if (current->pairs != NULL) {
+	if (current->df_enable && current->pairs != NULL) {
 		if (current->df_index)
 			report();
 		kfree(current->pairs);
@@ -64,7 +66,7 @@ void end_system_call(void)
 		current->df_index = 0;
 		current->df_size = 0;
 	}
-	if (current->addresses != NULL) {
+	if (current->df_enable && current->addresses != NULL) {
 		current->num_read = 0;
 		current->sz = 0;
 		kfree(current->addresses);
@@ -172,7 +174,7 @@ int filter_stack(const unsigned long stack_entries[], int num_entries)
 bool check_valid_detection(void)
 {
 	if (current->syscall_num == 54 || current->syscall_num == 165 ||
-	    current->syscall_num == 47)
+	    current->syscall_num == 55)
 		return false;
 	return true;
 }
@@ -222,11 +224,7 @@ void detect_intersection(void)
 		}
 	}
 }
-static int df_open(struct inode *inode, struct file *filep)
-{
-	return nonseekable_open(inode, filep);
-}
-static long df_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
+static long df_ioctl(struct file *filep, unsigned int cmd, unsigned long unused)
 {
 	switch (cmd) {
 	case DF_ENABLE:
@@ -241,7 +239,7 @@ static long df_ioctl(struct file *filep, unsigned int cmd, unsigned long arg)
 	}
 }
 static const struct file_operations df_fops = {
-    .open = df_open,
+    .open = nonseekable_open,
     .unlocked_ioctl = df_ioctl,
     .compat_ioctl = df_ioctl,
 };
