@@ -14,12 +14,17 @@ void add_address(const void *addr, size_t len, unsigned long caller)
 	if (current->addresses == NULL || current->pairs == NULL ||
 	    addr > TASK_SIZE)
 		return;
-	char buf[64];
+	char buf[64], buf_caller[64];
 	int size;
 	size = scnprintf(buf, sizeof(buf), "%ps", caller);
+	/*TODO: find a better way to make kcov_ioctl not blocking syzkaller
+	 or i can make this filter in syzkaller*/
+	int size_caller = scnprintf(buf_caller, sizeof(buf_caller), "%ps", _RET_IP_);
 	/*ignore cases based on input(pointer and length)*/
 	if (len > MAX_LEN || addr == 0 ||
-	    strnstr(buf, "copy_from_user_nmi", size))
+	    strnstr(buf, "copy_from_user_nmi", size) ||
+	    strnstr(buf, "kcov_ioctl", size) ||
+	    strnstr(buf_caller, "kcov_ioctl", size_caller))
 		return;
 	if (current->num_read >= current->sz &&
 	    !WARN_ON(current->sz > DF_MAX_RECORDS)) {
@@ -168,9 +173,9 @@ int filter_stack(const unsigned long stack_entries[], int num_entries)
 
 	return indx == num_entries ? 0 : indx;
 }
-/*skipping systemcalls: (setsockopt, mount recvmsg ) for now because they are
- * causing reports at boot time*/
-// return zero if detecting a false DF
+/*skipping systemcalls: (setsockopt, mount ,getsockopt ) for now because they
+ * are causing reports at boot time*/
+//TODO: moving this filter to syzkaller by enable and disable df_detection
 bool check_valid_detection(void)
 {
 	if (current->syscall_num == 54 || current->syscall_num == 165 ||
