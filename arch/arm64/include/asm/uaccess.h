@@ -23,6 +23,7 @@
 #include <asm/ptrace.h>
 #include <asm/memory.h>
 #include <asm/extable.h>
+#include "linux/df-detection.h"
 
 #define get_fs()	(current_thread_info()->addr_limit)
 
@@ -388,6 +389,7 @@ extern unsigned long __must_check __arch_copy_from_user(void *to, const void __u
 	uaccess_enable_not_uao();					\
 	__acfu_ret = __arch_copy_from_user((to),			\
 				      __uaccess_mask_ptr(from), (n));	\
+	add_address(from, n, __builtin_return_address(1));		\
 	uaccess_disable_not_uao();					\
 	__acfu_ret;							\
 })

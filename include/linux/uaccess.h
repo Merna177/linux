@@ -7,7 +7,6 @@
 #include <linux/thread_info.h>
 
 #include <asm/uaccess.h>
-#include "linux/df-detection.h"
 
 /*
  * Force the uaccess routines to be wired up for actual userspace access,
@@ -75,7 +74,6 @@ static inline void force_uaccess_end(mm_segment_t oldfs)
 static __always_inline __must_check unsigned long
 __copy_from_user_inatomic(void *to, const void __user *from, unsigned long n)
 {
-	add_address(from, n, _RET_IP_);
 	instrument_copy_from_user(to, from, n);
 	check_object_size(to, n, false);
 	return raw_copy_from_user(to, from, n);
@@ -85,7 +83,6 @@ static __always_inline __must_check unsigned long
 __copy_from_user(void *to, const void __user *from, unsigned long n)
 {
 	might_fault();
-	add_address(from, n, _RET_IP_);
 	instrument_copy_from_user(to, from, n);
 	check_object_size(to, n, false);
 	return raw_copy_from_user(to, from, n);
