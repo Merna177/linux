@@ -9,6 +9,7 @@
 #include <linux/stacktrace.h>
 #include <linux/sys.h>
 #include <linux/types.h>
+
 void add_address(const void *addr, size_t len, unsigned long caller)
 {
 	if (current->addresses == NULL || current->pairs == NULL ||
@@ -19,7 +20,8 @@ void add_address(const void *addr, size_t len, unsigned long caller)
 	size = scnprintf(buf, sizeof(buf), "%ps", caller);
 	/*TODO: find a better way to make kcov_ioctl not blocking syzkaller
 	 or i can make this filter in syzkaller*/
-	int size_caller = scnprintf(buf_caller, sizeof(buf_caller), "%ps", _RET_IP_);
+	int size_caller =
+	    scnprintf(buf_caller, sizeof(buf_caller), "%ps", _RET_IP_);
 	/*ignore cases based on input(pointer and length)*/
 	if (len > MAX_LEN || addr == 0 ||
 	    strnstr(buf, "copy_from_user_nmi", size) ||
@@ -47,9 +49,10 @@ void add_address(const void *addr, size_t len, unsigned long caller)
 		current->num_read++;
 	}
 }
+
 void start_system_call(long syscall)
 {
-	if (!current->df_enable) 
+	if (!current->df_enable)
 		return;
 	current->syscall_num = syscall;
 	current->addresses = (struct df_address_range *)kmalloc_array(
@@ -61,9 +64,10 @@ void start_system_call(long syscall)
 	current->df_size = current->pairs ? DF_INIT_SIZE : 0;
 	current->df_index = 0;
 }
+
 void end_system_call(void)
 {
-	if(!current->df_enable)
+	if (!current->df_enable)
 		return;
 	if (current->pairs != NULL) {
 		if (current->df_index)
@@ -154,6 +158,7 @@ void report(void)
 		}
 	}
 }
+
 int filter_stack(const unsigned long stack_entries[], int num_entries)
 {
 	char buf[64];
@@ -175,9 +180,10 @@ int filter_stack(const unsigned long stack_entries[], int num_entries)
 
 	return indx == num_entries ? 0 : indx;
 }
+
 /*skipping systemcalls: (setsockopt, mount ,getsockopt ) for now because they
  * are causing reports at boot time*/
-//TODO: moving this filter to syzkaller by enable and disable df_detection
+// TODO: moving this filter to syzkaller by enable and disable df_detection
 bool check_valid_detection(void)
 {
 	if (current->syscall_num == 54 || current->syscall_num == 165 ||
@@ -185,6 +191,7 @@ bool check_valid_detection(void)
 		return false;
 	return true;
 }
+
 depot_stack_handle_t df_save_stack(gfp_t flags)
 {
 	unsigned long entries[STACK_DEPTH];
@@ -205,6 +212,7 @@ int is_intersect(struct df_address_range a, struct df_address_range b)
 	}
 	return 0;
 }
+
 void detect_intersection(void)
 {
 	int i;
@@ -231,6 +239,7 @@ void detect_intersection(void)
 		}
 	}
 }
+
 static long df_ioctl(struct file *filep, unsigned int cmd, unsigned long unused)
 {
 	switch (cmd) {
@@ -245,11 +254,13 @@ static long df_ioctl(struct file *filep, unsigned int cmd, unsigned long unused)
 		return -ENOTTY;
 	}
 }
+
 static const struct file_operations df_fops = {
     .open = nonseekable_open,
     .unlocked_ioctl = df_ioctl,
     .compat_ioctl = df_ioctl,
 };
+
 static int __init df_detection_init(void)
 {
 	debugfs_create_file_unsafe("df_detection", 0600, NULL, NULL, &df_fops);
