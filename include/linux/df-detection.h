@@ -9,17 +9,21 @@
 #define STACK_DEPTH 64
 #define DF_ENABLE			_IO('c', 254)
 #define DF_DISABLE			_IO('c', 255)
+#define BYTE_MAX 256
 struct df_address_range{
         const void *start_address;
         unsigned long len;
         unsigned long caller;
         depot_stack_handle_t stack;
 };
+
 struct df_pair{
         int first;
         int second;
 };
+
 void add_address(const void* addr,size_t len,unsigned long caller);
+void add_randomization(const void *addr, size_t len);
 void start_system_call(long syscall);
 void end_system_call(void);
 depot_stack_handle_t df_save_stack(gfp_t flags);

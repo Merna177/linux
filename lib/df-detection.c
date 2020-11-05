@@ -50,6 +50,14 @@ void add_address(const void *addr, size_t len, unsigned long caller)
 	}
 }
 
+void add_randomization(const void *addr, size_t len)
+{
+	int i;
+	for (i = 0; i < len; i++) {
+		*((char *)addr + i) = (*((char *)addr + i) + 1) % BYTE_MAX;
+	}
+}
+
 void start_system_call(long syscall)
 {
 	if (!current->df_enable)
@@ -205,9 +213,19 @@ depot_stack_handle_t df_save_stack(gfp_t flags)
 int is_intersect(struct df_address_range a, struct df_address_range b)
 {
 	if ((a.start_address <= b.start_address &&
-	     ((void *)(char *)a.start_address + a.len) > b.start_address) ||
-	    (b.start_address <= a.start_address &&
-	     ((void *)(char *)b.start_address + b.len) > a.start_address)) {
+	     ((void *)(char *)a.start_address + a.len) > b.start_address)) {
+		unsigned long diff =
+		    (char *)b.start_address - (char *)a.start_address;
+		add_randomization(b.start_address,
+				  b.len <= a.len ? b.len : a.len - diff);
+		return 1;
+	} else if ((b.start_address <= a.start_address &&
+		    ((void *)(char *)b.start_address + b.len) >
+			a.start_address)) {
+		unsigned long diff =
+		    (char *)a.start_address - (char *)b.start_address;
+		add_randomization(a.start_address,
+				  a.len <= b.len ? a.len : b.len - diff);
 		return 1;
 	}
 	return 0;
