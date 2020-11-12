@@ -28,8 +28,7 @@ void add_address(const void *addr, size_t len, unsigned long caller)
 	    strnstr(buf, "kcov_ioctl", size) ||
 	    strnstr(buf_caller, "kcov_ioctl", size_caller))
 		return;
-	if (current->num_read >= current->sz &&
-	    !WARN_ON(current->sz > DF_MAX_RECORDS)) {
+	if (current->num_read >= current->sz && current->sz < DF_MAX_RECORDS) {
 		struct df_address_range *temp =
 		    (struct df_address_range *)krealloc(
 			current->addresses,
@@ -237,8 +236,7 @@ void detect_intersection(void)
 				  current->addresses[current->num_read]))
 			continue;
 		if (current->df_index >= current->df_size &&
-		    !WARN_ON(current->df_size >
-			     DF_MAX_RECORDS * DF_MAX_RECORDS)) {
+		    current->df_size < DF_MAX_RECORDS * DF_MAX_RECORDS) {
 			struct df_pair *temp = (struct df_pair *)krealloc(
 			    current->pairs,
 			    current->df_size * 2 * sizeof(struct df_pair),
