@@ -22,15 +22,15 @@ struct df_pair{
         int second;
 };
 
-void add_address(const void* addr,size_t len,unsigned long caller);
-void add_randomization(const void *addr, size_t len);
+void add_address(const void *addr, size_t len, unsigned long caller, void * kernel_addr);
+void add_randomization(unsigned long start, size_t len, void *addr);
 void start_system_call(long syscall);
 void end_system_call(void);
 depot_stack_handle_t df_save_stack(gfp_t flags);
 void report(void);
 int filter_stack(const unsigned long stack_entries[], int num_entries);
 bool check_valid_detection(void);
-void detect_intersection(void);
-int is_intersect(struct df_address_range a, struct df_address_range b);
+void detect_intersection(void * kernel_addr);
+int is_intersect(struct df_address_range a, struct df_address_range b, void * kernel_addr);
 #endif
 #endif
