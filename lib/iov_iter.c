@@ -150,7 +150,6 @@ static int copyout(void __user *to, const void *from, size_t n)
 static int copyin(void *to, const void __user *from, size_t n)
 {
 	if (access_ok(from, n)) {
-		add_address(from, n, _RET_IP_, to);
 		instrument_copy_from_user(to, from, n);
 		n = raw_copy_from_user(to, from, n);
 	}
