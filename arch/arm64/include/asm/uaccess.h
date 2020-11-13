@@ -389,7 +389,6 @@ extern unsigned long __must_check __arch_copy_from_user(void *to, const void __u
 	uaccess_enable_not_uao();					\
 	__acfu_ret = __arch_copy_from_user((to),			\
 				      __uaccess_mask_ptr(from), (n));	\
-	add_address(from, n, __builtin_return_address(1), to);		\
 	uaccess_disable_not_uao();					\
 	__acfu_ret;							\
 })
