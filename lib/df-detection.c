@@ -10,7 +10,8 @@
 #include <linux/sys.h>
 #include <linux/types.h>
 
-void add_address(const void *addr, size_t len, unsigned long caller)
+void add_address(const void *addr, size_t len, unsigned long caller,
+		 void *kernel_addr)
 {
 	if (current->addresses == NULL || current->pairs == NULL ||
 	    addr > TASK_SIZE)
@@ -44,15 +45,15 @@ void add_address(const void *addr, size_t len, unsigned long caller)
 		current->addresses[current->num_read].caller = caller;
 		current->addresses[current->num_read].stack =
 		    df_save_stack(GFP_NOWAIT);
-		detect_intersection();
+		detect_intersection(kernel_addr);
 		current->num_read++;
 	}
 }
 
-void add_randomization(const void *addr, size_t len)
+void add_randomization(unsigned long start, size_t len, void *addr)
 {
 	int i;
-	for (i = 0; i < len; i++) {
+	for (i = start; i < len; i++) {
 		*((char *)addr + i) = (*((char *)addr + i) + 1) % BYTE_MAX;
 	}
 }
@@ -209,31 +210,35 @@ depot_stack_handle_t df_save_stack(gfp_t flags)
 	return stack_depot_save(entries, nr_entries, flags);
 }
 
-int is_intersect(struct df_address_range a, struct df_address_range b)
+int is_intersect(struct df_address_range a, struct df_address_range b,
+		 void *kernel_addr)
 {
 	void *a_end = (void *)((char *)a.start_address + a.len);
 	void *b_end = (void *)((char *)b.start_address + b.len);
 	if (a.start_address <= b.start_address && a_end > b.start_address) {
 		size_t len = (char *)(a_end > b_end ? b_end : a_end) -
 			     (char *)b.start_address;
-		add_randomization(b.start_address, len);
+		add_randomization(0, len, kernel_addr);
 		return 1;
 	} else if (b.start_address <= a.start_address &&
 		   b_end > a.start_address) {
+		unsigned long diff =
+		    (char *)b.start_address - (char *)a.start_address;
 		size_t len = (char *)(a_end > b_end ? b_end : a_end) -
 			     (char *)a.start_address;
-		add_randomization(a.start_address, len);
+		add_randomization(diff, len, kernel_addr);
 		return 1;
 	}
 	return 0;
 }
 
-void detect_intersection(void)
+void detect_intersection(void *kernel_addr)
 {
 	int i;
 	for (i = 0; i < current->num_read; i++) {
 		if (!is_intersect(current->addresses[i],
-				  current->addresses[current->num_read]))
+				  current->addresses[current->num_read],
+				  kernel_addr))
 			continue;
 		if (current->df_index >= current->df_size &&
 		    current->df_size < DF_MAX_RECORDS * DF_MAX_RECORDS) {
