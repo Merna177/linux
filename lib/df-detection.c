@@ -123,10 +123,10 @@ void report(void)
 			if (strnstr(first_buf, "perf_copy_attr", first_len) &&
 			    strnstr(second_buf, "perf_copy_attr", second_len))
 				continue;
-			pr_err("BUG: multi-read in %ps  "
-			       "between %ps and %ps\n ",
-			       sys_call_table[current->syscall_num],
-			       first_frame, second_frame);
+			pr_err("BUG: multi-read in %ps, "
+			       "syscall %ps\n ",
+			       first_frame,
+			       sys_call_table[current->syscall_num]);
 			pr_err("==============================================="
 			       "===================\n");
 			pr_err("======= First Address Range Stack =======");
@@ -144,13 +144,14 @@ void report(void)
 		       sys_call_table[current->syscall_num]);
 		pr_err(
 		    "First %px len %lu Caller %pSR \nSecond %px len "
-		    "%lu Caller %pSR \n",
+		    "%lu Caller %pSR \n \n",
 		    current->addresses[current->pairs[i].first].start_address,
 		    current->addresses[current->pairs[i].first].len,
 		    current->addresses[current->pairs[i].first].caller,
 		    current->addresses[current->pairs[i].second].start_address,
 		    current->addresses[current->pairs[i].second].len,
 		    current->addresses[current->pairs[i].second].caller);
+		dump_stack_print_info(KERN_DEFAULT);
 		pr_err("======================================================="
 		       "===========\n");
 		if (panic_on_warn) {
