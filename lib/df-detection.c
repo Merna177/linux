@@ -4,6 +4,7 @@
 #include <linux/fs.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
+#include <linux/random.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
 #include <linux/stacktrace.h>
@@ -47,14 +48,6 @@ void add_address(const void *addr, size_t len, unsigned long caller,
 		    df_save_stack(GFP_NOWAIT);
 		detect_intersection(kernel_addr);
 		current->num_read++;
-	}
-}
-
-void add_randomization(unsigned long start, size_t len, void *addr)
-{
-	int i;
-	for (i = start; i < len; i++) {
-		*((char *)addr + i) = (*((char *)addr + i) + 1) % BYTE_MAX;
 	}
 }
 
@@ -218,15 +211,15 @@ int is_intersect(struct df_address_range a, struct df_address_range b,
 	if (a.start_address <= b.start_address && a_end > b.start_address) {
 		size_t len = (char *)(a_end > b_end ? b_end : a_end) -
 			     (char *)b.start_address;
-		add_randomization(0, len, kernel_addr);
+		get_random_bytes(kernel_addr, len);
 		return 1;
 	} else if (b.start_address <= a.start_address &&
 		   b_end > a.start_address) {
 		unsigned long diff =
-		    (char *)b.start_address - (char *)a.start_address;
+		    (char *)a.start_address - (char *)b.start_address;
 		size_t len = (char *)(a_end > b_end ? b_end : a_end) -
 			     (char *)a.start_address;
-		add_randomization(diff, len, kernel_addr);
+		get_random_bytes(((char *)kernel_addr + diff), len);
 		return 1;
 	}
 	return 0;
