@@ -14,7 +14,7 @@
 void add_address(const void *addr, size_t len, unsigned long caller,
 		 void *kernel_addr)
 {
-	if (current->addresses == NULL || current->pairs == NULL ||
+	if (!in_task() || current->addresses == NULL || current->pairs == NULL ||
 	    addr > TASK_SIZE)
 		return;
 	char buf[64], buf_caller[64];
