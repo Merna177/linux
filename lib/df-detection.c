@@ -20,15 +20,7 @@ void add_address(const void *addr, size_t len, unsigned long caller,
 	char buf[64], buf_caller[64];
 	int size;
 	size = scnprintf(buf, sizeof(buf), "%ps", caller);
-	/*TODO: find a better way to make kcov_ioctl not blocking syzkaller
-	 or i can make this filter in syzkaller*/
-	int size_caller =
-	    scnprintf(buf_caller, sizeof(buf_caller), "%ps", _RET_IP_);
-	/*ignore cases based on input(pointer and length)*/
-	if (len > MAX_LEN || addr == 0 ||
-	    strnstr(buf, "copy_from_user_nmi", size) ||
-	    strnstr(buf, "kcov_ioctl", size) ||
-	    strnstr(buf_caller, "kcov_ioctl", size_caller))
+	if (len > MAX_LEN || addr == 0 || strnstr(buf, "copy_from_user_nmi", size))
 		return;
 	if (current->num_read >= current->sz && current->sz < DF_MAX_RECORDS) {
 		struct df_address_range *temp =
@@ -134,7 +126,7 @@ void report(void)
 			pr_err("======= Second Address Range Stack =======");
 			stack_trace_print(second_entries, second_nr_entries, 0);
 		} else {
-			pr_err("BUG: Intersection Detected at syscall: %ps\n ",
+			pr_err("BUG: multi-read in syscall %ps\n ",
 			       sys_call_table[current->syscall_num]);
 			pr_err("==============================================="
 			       "===================\n");
@@ -256,11 +248,11 @@ void detect_intersection(void *kernel_addr)
 static long df_ioctl(struct file *filep, unsigned int cmd, unsigned long unused)
 {
 	switch (cmd) {
-	case DF_ENABLE:
+	case DFETCH_ENABLE:
 		/* Enable DF for the current task.*/
 		current->df_enable = true;
 		return 0;
-	case DF_DISABLE:
+	case DFETCH_DISABLE:
 		current->df_enable = false;
 		return 0;
 	default:

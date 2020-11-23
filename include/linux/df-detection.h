@@ -7,8 +7,8 @@
 #define DF_MAX_RECORDS 1024
 #define MAX_LEN 1 << 20
 #define STACK_DEPTH 64
-#define DF_ENABLE			_IO('c', 254)
-#define DF_DISABLE			_IO('c', 255)
+#define DFETCH_ENABLE			_IO('c', 254)
+#define DFETCH_DISABLE			_IO('c', 255)
 #define BYTE_MAX 256
 struct df_address_range{
         const void *start_address;
