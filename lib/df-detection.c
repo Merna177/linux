@@ -1,4 +1,4 @@
-#include "linux/df-detection.h"
+#include <linux/df-detection.h>
 #include <asm/syscall.h>
 #include <linux/debugfs.h>
 #include <linux/fs.h>
@@ -80,8 +80,6 @@ void end_system_call(void)
 
 void report(void)
 {
-	if (!check_valid_detection())
-		return;
 	int i;
 	unsigned long *first_entries;
 	unsigned int first_nr_entries;
@@ -99,37 +97,15 @@ void report(void)
 			second_nr_entries = stack_depot_fetch(
 			    current->addresses[current->pairs[i].second].stack,
 			    &second_entries);
-			int first_index =
-			    filter_stack(first_entries, first_nr_entries);
-			int second_index =
-			    filter_stack(second_entries, second_nr_entries);
-			first_frame = first_entries[first_index];
-			second_frame = second_entries[second_index];
-			char first_buf[64], second_buf[64];
-			int first_len, second_len;
-			/*check if this bug happent in perf_copy_attr*/
-			first_len = scnprintf(first_buf, sizeof(first_buf),
-					      "%ps", (void *)first_frame);
-			second_len = scnprintf(second_buf, sizeof(second_buf),
-					       "%ps", (void *)second_frame);
-			if (strnstr(first_buf, "perf_copy_attr", first_len) &&
-			    strnstr(second_buf, "perf_copy_attr", second_len))
-				continue;
-			pr_err("BUG: multi-read in %ps, "
-			       "syscall %ps\n ",
-			       first_frame,
-			       sys_call_table[current->syscall_num]);
-			pr_err("==============================================="
-			       "===================\n");
-			pr_err("======= First Address Range Stack =======");
+			pr_err("BUG: multi-read\n");
+			pr_err("==================================================================\n");
+			pr_err("First Address Range Stack:");
 			stack_trace_print(first_entries, first_nr_entries, 0);
-			pr_err("======= Second Address Range Stack =======");
+			pr_err("Second Address Range Stack\n");
 			stack_trace_print(second_entries, second_nr_entries, 0);
 		} else {
-			pr_err("BUG: multi-read in syscall %ps\n ",
-			       sys_call_table[current->syscall_num]);
-			pr_err("==============================================="
-			       "===================\n");
+			pr_err("BUG: multi-read\n");
+			pr_err("==================================================================\n");
 		}
 		pr_err("syscall number %ld  System Call: %pSR\n",
 		       current->syscall_num,
@@ -151,39 +127,6 @@ void report(void)
 			panic("panic_on_warn set. \n");
 		}
 	}
-}
-
-int filter_stack(const unsigned long stack_entries[], int num_entries)
-{
-	char buf[64];
-	int len, indx;
-	/*we are not interested in first 2 entries as they are always
-	 * add_address & df_save_stack*/
-	for (indx = 2; indx < num_entries; indx++) {
-		len = scnprintf(buf, sizeof(buf), "%ps",
-				(void *)stack_entries[indx]);
-
-		if (strnstr(buf, "copy_from_user", len) ||
-		    strnstr(buf, "copyin", len) ||
-		    strnstr(buf, "strncpy_from_user", len) ||
-		    strnstr(buf, "get_user", len) ||
-		    strnstr(buf, "memdup_user", len))
-			continue;
-		break;
-	}
-
-	return indx == num_entries ? 0 : indx;
-}
-
-/*skipping systemcalls: (setsockopt, mount ,getsockopt ) for now because they
- * are causing reports at boot time*/
-// TODO: moving this filter to syzkaller by enable and disable df_detection
-bool check_valid_detection(void)
-{
-	if (current->syscall_num == 54 || current->syscall_num == 165 ||
-	    current->syscall_num == 55)
-		return false;
-	return true;
 }
 
 depot_stack_handle_t df_save_stack(gfp_t flags)
