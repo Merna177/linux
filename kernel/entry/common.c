@@ -4,7 +4,7 @@
 #include <linux/entry-common.h>
 #include <linux/livepatch.h>
 #include <linux/audit.h>
-#include "linux/df-detection.h"
+#include <linux/df-detection.h>
 
 #define CREATE_TRACE_POINTS
 #include <trace/events/syscalls.h>
@@ -24,9 +24,9 @@ static __always_inline void enter_from_user_mode(struct pt_regs *regs)
 	arch_check_user_regs(regs);
 	lockdep_hardirqs_off(CALLER_ADDR0);
 
-        CT_WARN_ON(ct_state() != CONTEXT_USER);
+	CT_WARN_ON(ct_state() != CONTEXT_USER);
 	user_exit_irqoff();
-        start_system_call();
+
 	instrumentation_begin();
 	trace_hardirqs_off_finish();
 	instrumentation_end();
@@ -91,6 +91,7 @@ noinstr long syscall_enter_from_user_mode(struct pt_regs *regs, long syscall)
 {
 	long ret;
 
+	start_system_call(syscall);
 	enter_from_user_mode(regs);
 
 	instrumentation_begin();
@@ -122,12 +123,13 @@ noinstr void syscall_enter_from_user_mode_prepare(struct pt_regs *regs)
  * 4) Tell lockdep that interrupts are enabled
  */
 static __always_inline void exit_to_user_mode(void)
-{   
-        end_system_call();
+{
+	end_system_call();
 	instrumentation_begin();
 	trace_hardirqs_on_prepare();
 	lockdep_hardirqs_on_prepare(CALLER_ADDR0);
 	instrumentation_end();
+
 	user_enter_irqoff();
 	arch_exit_to_user_mode();
 	lockdep_hardirqs_on(CALLER_ADDR0);
