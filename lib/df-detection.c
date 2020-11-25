@@ -1,5 +1,4 @@
 #include <linux/df-detection.h>
-#include <asm/syscall.h>
 #include <linux/debugfs.h>
 #include <linux/fs.h>
 #include <linux/init.h>
@@ -43,11 +42,10 @@ void add_address(const void *addr, size_t len, unsigned long caller,
 	}
 }
 
-void start_system_call(long syscall)
+void start_system_call(void)
 {
 	if (!current->df_enable)
 		return;
-	current->syscall_num = syscall;
 	current->addresses = (struct df_address_range *)kmalloc_array(
 	    DF_INIT_SIZE, sizeof(struct df_address_range), GFP_KERNEL);
 	current->sz = current->addresses ? DF_INIT_SIZE : 0;
@@ -100,16 +98,14 @@ void report(void)
 			pr_err("BUG: multi-read\n");
 			pr_err("==================================================================\n");
 			pr_err("First Address Range Stack:");
+			dump_stack();
 			stack_trace_print(first_entries, first_nr_entries, 0);
-			pr_err("Second Address Range Stack\n");
+			pr_err("Second Address Range Stack:");
 			stack_trace_print(second_entries, second_nr_entries, 0);
 		} else {
 			pr_err("BUG: multi-read\n");
 			pr_err("==================================================================\n");
 		}
-		pr_err("syscall number %ld  System Call: %pSR\n",
-		       current->syscall_num,
-		       sys_call_table[current->syscall_num]);
 		pr_err(
 		    "First %px len %lu Caller %pSR \nSecond %px len "
 		    "%lu Caller %pSR \n \n",
@@ -209,10 +205,10 @@ static const struct file_operations df_fops = {
     .compat_ioctl = df_ioctl,
 };
 
-static int __init df_detection_init(void)
+static int __init dfetch_detection_init(void)
 {
-	debugfs_create_file_unsafe("df_detection", 0600, NULL, NULL, &df_fops);
+	debugfs_create_file_unsafe("dfetch_detection", 0600, NULL, NULL, &df_fops);
 
 	return 0;
 }
-device_initcall(df_detection_init);
+device_initcall(dfetch_detection_init);

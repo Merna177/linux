@@ -10,7 +10,7 @@
 #include <net/checksum.h>
 #include <linux/scatterlist.h>
 #include <linux/instrumented.h>
-#include "linux/df-detection.h"
+#include <linux/df-detection.h>
 
 #define PIPE_PARANOIA /* for now */
 

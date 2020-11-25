@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-2.0
 #include <linux/bitops.h>
+#include <linux/df-detection.h>
 #include <linux/instrumented.h>
 #include <linux/uaccess.h>
-#include "linux/df-detection.h"
 
 /* out-of-line parts */
 

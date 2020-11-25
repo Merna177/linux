@@ -1324,7 +1324,6 @@ struct task_struct {
 	struct df_pair *pairs;
 	int df_index;
 	int df_size;
-	long syscall_num;
 	bool df_enable;
 #endif
 	/*

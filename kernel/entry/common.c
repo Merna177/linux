@@ -27,6 +27,7 @@ static __always_inline void enter_from_user_mode(struct pt_regs *regs)
 	CT_WARN_ON(ct_state() != CONTEXT_USER);
 	user_exit_irqoff();
 
+	start_system_call();
 	instrumentation_begin();
 	trace_hardirqs_off_finish();
 	instrumentation_end();
@@ -91,7 +92,6 @@ noinstr long syscall_enter_from_user_mode(struct pt_regs *regs, long syscall)
 {
 	long ret;
 
-	start_system_call(syscall);
 	enter_from_user_mode(regs);
 
 	instrumentation_begin();

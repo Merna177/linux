@@ -30,7 +30,7 @@ struct df_pair{
 };
 
 void add_address(const void *addr, size_t len, unsigned long caller, void * kernel_addr);
-void start_system_call(long syscall);
+void start_system_call(void);
 void end_system_call(void);
 depot_stack_handle_t df_save_stack(gfp_t flags);
 void report(void);
