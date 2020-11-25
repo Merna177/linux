@@ -98,7 +98,6 @@ void report(void)
 			pr_err("BUG: multi-read\n");
 			pr_err("==================================================================\n");
 			pr_err("First Address Range Stack:");
-			dump_stack();
 			stack_trace_print(first_entries, first_nr_entries, 0);
 			pr_err("Second Address Range Stack:");
 			stack_trace_print(second_entries, second_nr_entries, 0);
