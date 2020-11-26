@@ -11,6 +11,7 @@
 
 #include <asm/current.h>
 
+#include <linux/df-detection.h>
 #include <linux/pid.h>
 #include <linux/sem.h>
 #include <linux/shm.h>
@@ -34,7 +35,6 @@
 #include <linux/rseq.h>
 #include <linux/seqlock.h>
 #include <linux/kcsan.h>
-#include "linux/df-detection.h"
 
 /* task_struct member predeclarations (sorted alphabetically): */
 struct audit_context;
@@ -1318,13 +1318,13 @@ struct task_struct {
 
  //needed in double fetch detection buffer to store address ranges 
 #ifdef CONFIG_DF_DETECTION
-        struct dfetch_address_range *addresses;
+        struct dfetch_address_range *dfetch_addresses;
         int num_read;
-        int sz;
-	struct dfetch_pair *pairs;
-	int df_index;
-	int df_size;
-	bool df_enable;
+        int ranges_size;
+	struct dfetch_pair *dfetch_pairs;
+	int dfetch_index;
+	int dfetch_size;
+	bool dfetch_enable;
 #endif
 	/*
 	 * New fields for task_struct should be added above here, so that
