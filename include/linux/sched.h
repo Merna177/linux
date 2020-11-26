@@ -1341,8 +1341,6 @@ struct task_struct {
 	 *
 	 * Do not put anything below here!
 	 */
-	
-
 };
 
 static inline struct pid *task_pid(struct task_struct *task)

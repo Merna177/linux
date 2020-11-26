@@ -10,7 +10,7 @@
 #include <linux/sys.h>
 #include <linux/types.h>
 
-void add_address(const void *addr, size_t len, unsigned long caller,
+void dfetch_add_address(const void *addr, size_t len, unsigned long caller,
 		 void *kernel_addr)
 {
 	if (!in_task() || current->dfetch_addresses == NULL || current->dfetch_pairs == NULL ||

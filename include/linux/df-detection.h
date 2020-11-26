@@ -29,7 +29,7 @@ struct dfetch_pair{
         int second;
 };
 
-void add_address(const void *addr, size_t len, unsigned long caller, void * kernel_addr);
+void dfetch_add_address(const void *addr, size_t len, unsigned long caller, void * kernel_addr);
 void start_system_call(void);
 void end_system_call(void);
 depot_stack_handle_t dfetch_save_stack(gfp_t flags);

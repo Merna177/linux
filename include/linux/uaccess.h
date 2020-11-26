@@ -2,6 +2,7 @@
 #ifndef __LINUX_UACCESS_H__
 #define __LINUX_UACCESS_H__
 
+#include <linux/df-detection.h>
 #include <linux/instrumented.h>
 #include <linux/sched.h>
 #include <linux/thread_info.h>
@@ -78,7 +79,9 @@ __copy_from_user_inatomic(void *to, const void __user *from, unsigned long n)
 	instrument_copy_from_user(to, from, n);
 	check_object_size(to, n, false);
 	res = raw_copy_from_user(to, from, n);
-	add_address(from, n, _RET_IP_, to);
+#ifdef CONFIG_DF_DETECTION
+	dfetch_add_address(from, n, _RET_IP_, to);
+#endif
 	return res;
 }
 
@@ -90,7 +93,9 @@ __copy_from_user(void *to, const void __user *from, unsigned long n)
 	instrument_copy_from_user(to, from, n);
 	check_object_size(to, n, false);
 	res = raw_copy_from_user(to, from, n);
-	add_address(from, n, _RET_IP_, to);
+#ifdef CONFIG_DF_DETECTION
+	dfetch_add_address(from, n, _RET_IP_, to);
+#endif
 	return res;
 }
 
@@ -133,7 +138,9 @@ _copy_from_user(void *to, const void __user *from, unsigned long n)
 	if (likely(access_ok(from, n))) {
 		instrument_copy_from_user(to, from, n);
 		res = raw_copy_from_user(to, from, n);
-		add_address(from, n, _RET_IP_, to);
+#ifdef CONFIG_DF_DETECTION
+		dfetch_add_address(from, n, _RET_IP_, to);
+#endif
 	}
 	if (unlikely(res))
 		memset(to + (n - res), 0, res);

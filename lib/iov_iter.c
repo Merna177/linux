@@ -2,6 +2,7 @@
 #include <crypto/hash.h>
 #include <linux/export.h>
 #include <linux/bvec.h>
+#include <linux/df-detection.h>
 #include <linux/uio.h>
 #include <linux/pagemap.h>
 #include <linux/slab.h>
@@ -10,7 +11,6 @@
 #include <net/checksum.h>
 #include <linux/scatterlist.h>
 #include <linux/instrumented.h>
-#include <linux/df-detection.h>
 
 #define PIPE_PARANOIA /* for now */
 
@@ -152,7 +152,9 @@ static int copyin(void *to, const void __user *from, size_t n)
 	if (access_ok(from, n)) {
 		instrument_copy_from_user(to, from, n);
 		n = raw_copy_from_user(to, from, n);
-		add_address(from, n, _RET_IP_, to);
+#ifdef CONFIG_DF_DETECTION
+		dfetch_add_address(from, n, _RET_IP_, to);
+#endif
 	}
 	return n;
 }

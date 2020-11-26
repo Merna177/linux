@@ -181,7 +181,7 @@ extern int __get_user_bad(void);
 			ASM_CALL_CONSTRAINT				\
 		     : "0" (ptr), "i" (sizeof(*(ptr))));		\
 	(x) = (__force __typeof__(*(ptr))) __val_gu;			\
-	add_address(ptr, sizeof(*(ptr)), _RET_IP_, &x);			\
+	dfetch_add_address(ptr, sizeof(*(ptr)), _RET_IP_, &x);		\
 	__builtin_expect(__ret_gu, 0);					\
 })
 
