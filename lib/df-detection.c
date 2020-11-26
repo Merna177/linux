@@ -16,12 +16,9 @@ void add_address(const void *addr, size_t len, unsigned long caller,
 	if (!in_task() || current->addresses == NULL || current->pairs == NULL ||
 	    addr > TASK_SIZE)
 		return;
-	char buf[64], buf_caller[64];
-	int size;
-	size = scnprintf(buf, sizeof(buf), "%ps", caller);
-	if (len > MAX_LEN || addr == 0 || strnstr(buf, "copy_from_user_nmi", size))
+	if (len > MAX_LEN || addr == 0)
 		return;
-	if (current->num_read >= current->sz && current->sz < DF_MAX_RECORDS) {
+	if (current->num_read >= current->sz && current->sz < DFETCH_MAX_RECORDS) {
 		struct dfetch_address_range *temp =
 		    (struct dfetch_address_range *)krealloc(
 			current->addresses,
@@ -36,7 +33,7 @@ void add_address(const void *addr, size_t len, unsigned long caller,
 		current->addresses[current->num_read].len = len;
 		current->addresses[current->num_read].caller = caller;
 		current->addresses[current->num_read].stack =
-		    df_save_stack(GFP_NOWAIT);
+		    dfetch_save_stack(GFP_NOWAIT);
 		detect_intersection(kernel_addr);
 		current->num_read++;
 	}
@@ -47,12 +44,12 @@ void start_system_call(void)
 	if (!current->df_enable)
 		return;
 	current->addresses = (struct dfetch_address_range *)kmalloc_array(
-	    DF_INIT_SIZE, sizeof(struct dfetch_address_range), GFP_KERNEL);
-	current->sz = current->addresses ? DF_INIT_SIZE : 0;
+	    DFETCH_INIT_SIZE, sizeof(struct dfetch_address_range), GFP_KERNEL);
+	current->sz = current->addresses ? DFETCH_INIT_SIZE : 0;
 	current->num_read = 0;
 	current->pairs = (struct dfetch_pair *)kmalloc_array(
-	    DF_INIT_SIZE, sizeof(struct dfetch_pair), GFP_KERNEL);
-	current->df_size = current->pairs ? DF_INIT_SIZE : 0;
+	    DFETCH_INIT_SIZE, sizeof(struct dfetch_pair), GFP_KERNEL);
+	current->df_size = current->pairs ? DFETCH_INIT_SIZE : 0;
 	current->df_index = 0;
 }
 
@@ -123,7 +120,7 @@ void report(void)
 	}
 }
 
-depot_stack_handle_t df_save_stack(gfp_t flags)
+depot_stack_handle_t dfetch_save_stack(gfp_t flags)
 {
 	unsigned long entries[STACK_DEPTH];
 	unsigned int nr_entries;
@@ -164,7 +161,7 @@ void detect_intersection(void *kernel_addr)
 				  kernel_addr))
 			continue;
 		if (current->df_index >= current->df_size &&
-		    current->df_size < DF_MAX_RECORDS * DF_MAX_RECORDS) {
+		    current->df_size < DFETCH_MAX_RECORDS * DFETCH_MAX_RECORDS) {
 			struct dfetch_pair *temp = (struct dfetch_pair *)krealloc(
 			    current->pairs,
 			    current->df_size * 2 * sizeof(struct dfetch_pair),
@@ -182,7 +179,7 @@ void detect_intersection(void *kernel_addr)
 	}
 }
 
-static long df_ioctl(struct file *filep, unsigned int cmd, unsigned long unused)
+static long dfetch_ioctl(struct file *filep, unsigned int cmd, unsigned long unused)
 {
 	switch (cmd) {
 	case DFETCH_ENABLE:
@@ -197,15 +194,15 @@ static long df_ioctl(struct file *filep, unsigned int cmd, unsigned long unused)
 	}
 }
 
-static const struct file_operations df_fops = {
+static const struct file_operations dfetch_fops = {
     .open = nonseekable_open,
-    .unlocked_ioctl = df_ioctl,
-    .compat_ioctl = df_ioctl,
+    .unlocked_ioctl = dfetch_ioctl,
+    .compat_ioctl = dfetch_ioctl,
 };
 
 static int __init dfetch_detection_init(void)
 {
-	debugfs_create_file_unsafe("dfetch_detection", 0600, NULL, NULL, &df_fops);
+	debugfs_create_file_unsafe("dfetch_detection", 0600, NULL, NULL, &dfetch_fops);
 
 	return 0;
 }

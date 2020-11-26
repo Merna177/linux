@@ -8,8 +8,8 @@
 
 #ifdef CONFIG_DF_DETECTION
 
-#define DF_INIT_SIZE 16
-#define DF_MAX_RECORDS 1024
+#define DFETCH_INIT_SIZE 16
+#define DFETCH_MAX_RECORDS 1024
 #define MAX_LEN 1 << 20
 #define STACK_DEPTH 64
 #define DFETCH_ENABLE           _IO('c', 254)
@@ -32,7 +32,7 @@ struct dfetch_pair{
 void add_address(const void *addr, size_t len, unsigned long caller, void * kernel_addr);
 void start_system_call(void);
 void end_system_call(void);
-depot_stack_handle_t df_save_stack(gfp_t flags);
+depot_stack_handle_t dfetch_save_stack(gfp_t flags);
 void report(void);
 void detect_intersection(void * kernel_addr);
 int is_intersect(struct dfetch_address_range a, struct dfetch_address_range b, void * kernel_addr);
