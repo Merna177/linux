@@ -1318,10 +1318,10 @@ struct task_struct {
 
  //needed in double fetch detection buffer to store address ranges 
 #ifdef CONFIG_DF_DETECTION
-        struct df_address_range *addresses;
+        struct dfetch_address_range *addresses;
         int num_read;
         int sz;
-	struct df_pair *pairs;
+	struct dfetch_pair *pairs;
 	int df_index;
 	int df_size;
 	bool df_enable;

@@ -22,10 +22,10 @@ void add_address(const void *addr, size_t len, unsigned long caller,
 	if (len > MAX_LEN || addr == 0 || strnstr(buf, "copy_from_user_nmi", size))
 		return;
 	if (current->num_read >= current->sz && current->sz < DF_MAX_RECORDS) {
-		struct df_address_range *temp =
-		    (struct df_address_range *)krealloc(
+		struct dfetch_address_range *temp =
+		    (struct dfetch_address_range *)krealloc(
 			current->addresses,
-			current->sz * 2 * sizeof(struct df_address_range),
+			current->sz * 2 * sizeof(struct dfetch_address_range),
 			GFP_KERNEL);
 		current->addresses = temp ? temp : current->addresses;
 		current->sz =
@@ -46,12 +46,12 @@ void start_system_call(void)
 {
 	if (!current->df_enable)
 		return;
-	current->addresses = (struct df_address_range *)kmalloc_array(
-	    DF_INIT_SIZE, sizeof(struct df_address_range), GFP_KERNEL);
+	current->addresses = (struct dfetch_address_range *)kmalloc_array(
+	    DF_INIT_SIZE, sizeof(struct dfetch_address_range), GFP_KERNEL);
 	current->sz = current->addresses ? DF_INIT_SIZE : 0;
 	current->num_read = 0;
-	current->pairs = (struct df_pair *)kmalloc_array(
-	    DF_INIT_SIZE, sizeof(struct df_pair), GFP_KERNEL);
+	current->pairs = (struct dfetch_pair *)kmalloc_array(
+	    DF_INIT_SIZE, sizeof(struct dfetch_pair), GFP_KERNEL);
 	current->df_size = current->pairs ? DF_INIT_SIZE : 0;
 	current->df_index = 0;
 }
@@ -97,9 +97,10 @@ void report(void)
 			    &second_entries);
 			pr_err("BUG: multi-read\n");
 			pr_err("==================================================================\n");
-			pr_err("First Address Range Stack:");
+			dump_stack_print_info(KERN_DEFAULT);
+			pr_err("First Stack Trace:");
 			stack_trace_print(first_entries, first_nr_entries, 0);
-			pr_err("Second Address Range Stack:");
+			pr_err("Second Stack Trace:");
 			stack_trace_print(second_entries, second_nr_entries, 0);
 		} else {
 			pr_err("BUG: multi-read\n");
@@ -114,9 +115,7 @@ void report(void)
 		    current->addresses[current->pairs[i].second].start_address,
 		    current->addresses[current->pairs[i].second].len,
 		    current->addresses[current->pairs[i].second].caller);
-		dump_stack_print_info(KERN_DEFAULT);
-		pr_err("======================================================="
-		       "===========\n");
+		pr_err("==================================================================\n");
 		if (panic_on_warn) {
 			panic_on_warn = 0;
 			panic("panic_on_warn set. \n");
@@ -134,7 +133,7 @@ depot_stack_handle_t df_save_stack(gfp_t flags)
 	return stack_depot_save(entries, nr_entries, flags);
 }
 
-int is_intersect(struct df_address_range a, struct df_address_range b,
+int is_intersect(struct dfetch_address_range a, struct dfetch_address_range b,
 		 void *kernel_addr)
 {
 	void *a_end = (void *)((char *)a.start_address + a.len);
@@ -166,9 +165,9 @@ void detect_intersection(void *kernel_addr)
 			continue;
 		if (current->df_index >= current->df_size &&
 		    current->df_size < DF_MAX_RECORDS * DF_MAX_RECORDS) {
-			struct df_pair *temp = (struct df_pair *)krealloc(
+			struct dfetch_pair *temp = (struct dfetch_pair *)krealloc(
 			    current->pairs,
-			    current->df_size * 2 * sizeof(struct df_pair),
+			    current->df_size * 2 * sizeof(struct dfetch_pair),
 			    GFP_KERNEL);
 			current->pairs = temp ? temp : current->pairs;
 			current->df_size =

@@ -17,14 +17,14 @@
 #define BYTE_MAX 256
 
 /*For each address range used by copy functions*/
-struct df_address_range{
+struct dfetch_address_range{
         const void *start_address;
         unsigned long len;
         unsigned long caller;
         depot_stack_handle_t stack;
 };
 
-struct df_pair{
+struct dfetch_pair{
         int first;
         int second;
 };
@@ -35,7 +35,7 @@ void end_system_call(void);
 depot_stack_handle_t df_save_stack(gfp_t flags);
 void report(void);
 void detect_intersection(void * kernel_addr);
-int is_intersect(struct df_address_range a, struct df_address_range b, void * kernel_addr);
+int is_intersect(struct dfetch_address_range a, struct dfetch_address_range b, void * kernel_addr);
 
 #endif  /*CONFIG_DF_DETECTION*/
 
