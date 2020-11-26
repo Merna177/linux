@@ -23,7 +23,6 @@
 #include <asm/ptrace.h>
 #include <asm/memory.h>
 #include <asm/extable.h>
-#include "linux/df-detection.h"
 
 #define get_fs()	(current_thread_info()->addr_limit)
 
