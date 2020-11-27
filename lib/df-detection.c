@@ -157,18 +157,20 @@ int is_intersect(struct dfetch_address_range a, struct dfetch_address_range b,
 {
 	void *a_end = (void *)((char *)a.start_address + a.len);
 	void *b_end = (void *)((char *)b.start_address + b.len);
+	size_t len;
 
 	if (a.start_address <= b.start_address && a_end > b.start_address) {
-		size_t len = (char *)(a_end > b_end ? b_end : a_end) -
-			     (char *)b.start_address;
+		len = (char *)(a_end > b_end ? b_end : a_end) -
+		      (char *)b.start_address;
 		get_random_bytes(kernel_addr, len);
 		return 1;
 	} else if (b.start_address <= a.start_address &&
 		   b_end > a.start_address) {
 		unsigned long diff =
 		    (char *)a.start_address - (char *)b.start_address;
-		size_t len = (char *)(a_end > b_end ? b_end : a_end) -
-			     (char *)a.start_address;
+
+		len = (char *)(a_end > b_end ? b_end : a_end) -
+		      (char *)a.start_address;
 		get_random_bytes(((char *)kernel_addr + diff), len);
 		return 1;
 	}
