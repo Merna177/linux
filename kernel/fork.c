@@ -942,7 +942,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
 	tsk->active_memcg = NULL;
 #endif
 #ifdef CONFIG_DF_DETECTION
-        tsk->dfetch_addresses = NULL;
+	tsk->dfetch_addresses = NULL;
 	tsk->dfetch_pairs = NULL;
 #endif
 	return tsk;

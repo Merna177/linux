@@ -27,7 +27,7 @@ static __always_inline void enter_from_user_mode(struct pt_regs *regs)
 	CT_WARN_ON(ct_state() != CONTEXT_USER);
 	user_exit_irqoff();
 
-	start_system_call();
+	dfetch_start_system_call();
 	instrumentation_begin();
 	trace_hardirqs_off_finish();
 	instrumentation_end();
@@ -124,7 +124,7 @@ noinstr void syscall_enter_from_user_mode_prepare(struct pt_regs *regs)
  */
 static __always_inline void exit_to_user_mode(void)
 {
-	end_system_call();
+	dfetch_end_system_call();
 	instrumentation_begin();
 	trace_hardirqs_on_prepare();
 	lockdep_hardirqs_on_prepare(CALLER_ADDR0);

@@ -121,9 +121,7 @@ long strncpy_from_user(char *dst, const char __user *src, long count)
 		if (user_read_access_begin(src, max)) {
 			retval = do_strncpy_from_user(dst, src, count, max);
 			user_read_access_end();
-#ifdef CONFIG_DF_DETECTION
 			dfetch_add_address(src, retval, _RET_IP_, dst);
-#endif
 			return retval;
 		}
 	}
