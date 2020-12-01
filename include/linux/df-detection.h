@@ -32,10 +32,12 @@ struct dfetch_pair{
 void dfetch_add_address(const void *addr, size_t len, unsigned long caller, void * kernel_addr);
 void dfetch_start_system_call(void);
 void dfetch_end_system_call(void);
-depot_stack_handle_t dfetch_save_stack(gfp_t flags);
-void report(void);
-void detect_intersection(void * kernel_addr);
-int is_intersect(struct dfetch_address_range a, struct dfetch_address_range b, void * kernel_addr);
+
+#else /* CONFIG_DF_DETECTION */
+
+void dfetch_start_system_call(void){}
+void dfetch_end_system_call(void){}
+void dfetch_add_address(const void *addr, size_t len, unsigned long caller, void * kernel_addr){}
 
 #endif  /*CONFIG_DF_DETECTION*/
 
