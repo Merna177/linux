@@ -1317,7 +1317,7 @@ struct task_struct {
 #endif
 
  //needed in double fetch detection buffer to store address ranges 
-#ifdef CONFIG_DF_DETECTION
+#ifdef CONFIG_DFETCH_DETECTION
 	struct double_fetch dfetch;
 #endif
 	/*

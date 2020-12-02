@@ -6,7 +6,7 @@
 #include <linux/types.h>
 #include <linux/stackdepot.h>
 
-#ifdef CONFIG_DF_DETECTION
+#ifdef CONFIG_DFETCH_DETECTION
 
 #define DFETCH_INIT_SIZE 16
 #define DFETCH_MAX_RECORDS 1024
@@ -43,12 +43,12 @@ void dfetch_add_address(const void *addr, size_t len, unsigned long caller, void
 void dfetch_start_system_call(void);
 void dfetch_end_system_call(void);
 
-#else /* CONFIG_DF_DETECTION */
+#else /* CONFIG_DFETCH_DETECTION */
 
 void dfetch_start_system_call(void){}
 void dfetch_end_system_call(void){}
 void dfetch_add_address(const void *addr, size_t len, unsigned long caller, void * kernel_addr){}
 
-#endif  /* CONFIG_DF_DETECTION */
+#endif  /* CONFIG_DFETCH_DETECTION */
 
 #endif /* __LINUX_DOUBLE_FETCH_DETECTION_H__ */
