@@ -40,30 +40,38 @@ static void detect_intersection(void *kernel_addr)
 {
 	int i;
 
-	for (i = 0; i < current->num_read; i++) {
-		if (!is_intersect(current->dfetch_addresses[i],
-				  current->dfetch_addresses[current->num_read],
-				  kernel_addr))
+	for (i = 0; i < current->dfetch.num_read; i++) {
+		if (!is_intersect(
+			current->dfetch.dfetch_addresses[i],
+			current->dfetch
+			    .dfetch_addresses[current->dfetch.num_read],
+			kernel_addr))
 			continue;
-		if (current->dfetch_index >= current->dfetch_size &&
-		    current->dfetch_size <
+		if (current->dfetch.dfetch_index >=
+			current->dfetch.dfetch_size &&
+		    current->dfetch.dfetch_size <
 			DFETCH_MAX_RECORDS * DFETCH_MAX_RECORDS) {
 			struct dfetch_pair *temp =
 			    (struct dfetch_pair *)krealloc(
-				current->dfetch_pairs,
-				current->dfetch_size * 2 *
+				current->dfetch.dfetch_pairs,
+				current->dfetch.dfetch_size * 2 *
 				    sizeof(struct dfetch_pair),
 				GFP_KERNEL);
-			current->dfetch_pairs =
-			    temp ? temp : current->dfetch_pairs;
-			current->dfetch_size = temp ? current->dfetch_size * 2
-						    : current->dfetch_size;
+			current->dfetch.dfetch_pairs =
+			    temp ? temp : current->dfetch.dfetch_pairs;
+			current->dfetch.dfetch_size =
+			    temp ? current->dfetch.dfetch_size * 2
+				 : current->dfetch.dfetch_size;
 		}
-		if (current->dfetch_index < current->dfetch_size) {
-			current->dfetch_pairs[current->dfetch_index].first = i;
-			current->dfetch_pairs[current->dfetch_index].second =
-			    current->num_read;
-			current->dfetch_index++;
+		if (current->dfetch.dfetch_index <
+		    current->dfetch.dfetch_size) {
+			current->dfetch
+			    .dfetch_pairs[current->dfetch.dfetch_index]
+			    .first = i;
+			current->dfetch
+			    .dfetch_pairs[current->dfetch.dfetch_index]
+			    .second = current->dfetch.num_read;
+			current->dfetch.dfetch_index++;
 		}
 	}
 }
@@ -71,26 +79,27 @@ static void detect_intersection(void *kernel_addr)
 static void report(void)
 {
 	int i;
-	unsigned long *first_entries;
-	unsigned int first_nr_entries;
-	unsigned long *second_entries;
-	unsigned int second_nr_entries;
+	unsigned long *first_entries, *second_entries;
+	unsigned int first_nr_entries, second_nr_entries;
 
-	for (i = 0; i < current->dfetch_index; i++) {
-		if (current->dfetch_addresses[current->dfetch_pairs[i].first]
+	for (i = 0; i < current->dfetch.dfetch_index; i++) {
+		if (current->dfetch
+			.dfetch_addresses[current->dfetch.dfetch_pairs[i].first]
 			.stack &&
-		    current->dfetch_addresses[current->dfetch_pairs[i].second]
+		    current->dfetch
+			.dfetch_addresses[current->dfetch.dfetch_pairs[i]
+					      .second]
 			.stack) {
 			first_nr_entries = stack_depot_fetch(
-			    current
-				->dfetch_addresses[current->dfetch_pairs[i]
-						       .first]
+			    current->dfetch
+				.dfetch_addresses
+				    [current->dfetch.dfetch_pairs[i].first]
 				.stack,
 			    &first_entries);
 			second_nr_entries = stack_depot_fetch(
-			    current
-				->dfetch_addresses[current->dfetch_pairs[i]
-						       .second]
+			    current->dfetch
+				.dfetch_addresses
+				    [current->dfetch.dfetch_pairs[i].second]
 				.stack,
 			    &second_entries);
 			pr_err("BUG: multi-read\n");
@@ -102,22 +111,31 @@ static void report(void)
 			stack_trace_print(second_entries, second_nr_entries, 0);
 		} else {
 			pr_err("BUG: multi-read\n");
-			pr_err("============================================================\n);
+			pr_err("============================================================\n");
 		}
 		pr_err(
-		    "First %px len %lu Caller %pSR \nSecond %px len "
-		    "%lu Caller %pSR \n \n",
-		    current->dfetch_addresses[current->dfetch_pairs[i].first]
+		    "First %px len %lu Caller %ps \nSecond %px len %lu Caller "
+		    "%ps \n \n",
+		    current->dfetch
+			.dfetch_addresses[current->dfetch.dfetch_pairs[i].first]
 			.start_address,
-		    current->dfetch_addresses[current->dfetch_pairs[i].first]
+		    current->dfetch
+			.dfetch_addresses[current->dfetch.dfetch_pairs[i].first]
 			.len,
-		    current->dfetch_addresses[current->dfetch_pairs[i].first]
+		    current->dfetch
+			.dfetch_addresses[current->dfetch.dfetch_pairs[i].first]
 			.caller,
-		    current->dfetch_addresses[current->dfetch_pairs[i].second]
+		    current->dfetch
+			.dfetch_addresses[current->dfetch.dfetch_pairs[i]
+					      .second]
 			.start_address,
-		    current->dfetch_addresses[current->dfetch_pairs[i].second]
+		    current->dfetch
+			.dfetch_addresses[current->dfetch.dfetch_pairs[i]
+					      .second]
 			.len,
-		    current->dfetch_addresses[current->dfetch_pairs[i].second]
+		    current->dfetch
+			.dfetch_addresses[current->dfetch.dfetch_pairs[i]
+					      .second]
 			.caller);
 		pr_err("============================================================\n");
 		if (panic_on_warn) {
@@ -140,86 +158,91 @@ static depot_stack_handle_t dfetch_save_stack(gfp_t flags)
 void dfetch_add_address(const void *addr, size_t len, unsigned long caller,
 			void *kernel_addr)
 {
-	if (!in_task() || current->dfetch_addresses == NULL ||
-	    current->dfetch_pairs == NULL)
+	if (!in_task() || current->dfetch.dfetch_addresses == NULL ||
+	    current->dfetch.dfetch_pairs == NULL)
 		return;
 	if (len > MAX_LEN || addr == 0 || addr > TASK_SIZE)
 		return;
-	if (current->num_read >= current->ranges_size &&
-	    current->ranges_size < DFETCH_MAX_RECORDS) {
+	if (current->dfetch.num_read >= current->dfetch.ranges_size &&
+	    current->dfetch.ranges_size < DFETCH_MAX_RECORDS) {
 		struct dfetch_address_range *temp =
 		    (struct dfetch_address_range *)krealloc(
-			current->dfetch_addresses,
-			current->ranges_size * 2 *
+			current->dfetch.dfetch_addresses,
+			current->dfetch.ranges_size * 2 *
 			    sizeof(struct dfetch_address_range),
 			GFP_KERNEL);
-		current->dfetch_addresses =
-		    temp ? temp : current->dfetch_addresses;
-		current->ranges_size = current->dfetch_addresses
-					   ? current->ranges_size * 2
-					   : current->ranges_size;
+		current->dfetch.dfetch_addresses =
+		    temp ? temp : current->dfetch.dfetch_addresses;
+		current->dfetch.ranges_size =
+		    current->dfetch.dfetch_addresses
+			? current->dfetch.ranges_size * 2
+			: current->dfetch.ranges_size;
 	}
-	if (current->num_read < current->ranges_size) {
-		current->dfetch_addresses[current->num_read].start_address =
-		    addr;
-		current->dfetch_addresses[current->num_read].len = len;
-		current->dfetch_addresses[current->num_read].caller = caller;
-		current->dfetch_addresses[current->num_read].stack =
-		    dfetch_save_stack(GFP_NOWAIT);
+	if (current->dfetch.num_read < current->dfetch.ranges_size) {
+		current->dfetch.dfetch_addresses[current->dfetch.num_read]
+		    .start_address = addr;
+		current->dfetch.dfetch_addresses[current->dfetch.num_read].len =
+		    len;
+		current->dfetch.dfetch_addresses[current->dfetch.num_read]
+		    .caller = caller;
+		current->dfetch.dfetch_addresses[current->dfetch.num_read]
+		    .stack = dfetch_save_stack(GFP_NOWAIT);
 		detect_intersection(kernel_addr);
-		current->num_read++;
+		current->dfetch.num_read++;
 	}
 }
 EXPORT_SYMBOL(dfetch_add_address);
 
 void dfetch_start_system_call(void)
 {
-	if (!current->dfetch_enable)
+	if (!current->dfetch.dfetch_enable)
 		return;
-	current->dfetch_addresses =
+	current->dfetch.dfetch_addresses =
 	    (struct dfetch_address_range *)kmalloc_array(
 		DFETCH_INIT_SIZE, sizeof(struct dfetch_address_range),
 		GFP_KERNEL);
-	current->ranges_size = current->dfetch_addresses ? DFETCH_INIT_SIZE : 0;
-	current->num_read = 0;
-	current->dfetch_pairs = (struct dfetch_pair *)kmalloc_array(
+	current->dfetch.ranges_size =
+	    current->dfetch.dfetch_addresses ? DFETCH_INIT_SIZE : 0;
+	current->dfetch.num_read = 0;
+	current->dfetch.dfetch_pairs = (struct dfetch_pair *)kmalloc_array(
 	    DFETCH_INIT_SIZE, sizeof(struct dfetch_pair), GFP_KERNEL);
-	current->dfetch_size = current->dfetch_pairs ? DFETCH_INIT_SIZE : 0;
-	current->dfetch_index = 0;
+	current->dfetch.dfetch_size =
+	    current->dfetch.dfetch_pairs ? DFETCH_INIT_SIZE : 0;
+	current->dfetch.dfetch_index = 0;
 }
 EXPORT_SYMBOL(dfetch_start_system_call);
 
 void dfetch_end_system_call(void)
 {
-	if (!current->dfetch_enable)
+	if (!current->dfetch.dfetch_enable)
 		return;
-	if (current->dfetch_pairs != NULL) {
-		if (current->dfetch_index)
+	if (current->dfetch.dfetch_pairs != NULL) {
+		if (current->dfetch.dfetch_index)
 			report();
-		kfree(current->dfetch_pairs);
-		current->dfetch_pairs = NULL;
-		current->dfetch_index = 0;
-		current->dfetch_size = 0;
+		kfree(current->dfetch.dfetch_pairs);
+		current->dfetch.dfetch_pairs = NULL;
+		current->dfetch.dfetch_index = 0;
+		current->dfetch.dfetch_size = 0;
 	}
-	if (current->dfetch_addresses != NULL) {
-		current->num_read = 0;
-		current->ranges_size = 0;
-		kfree(current->dfetch_addresses);
-		current->dfetch_addresses = NULL;
+	if (current->dfetch.dfetch_addresses != NULL) {
+		current->dfetch.num_read = 0;
+		current->dfetch.ranges_size = 0;
+		kfree(current->dfetch.dfetch_addresses);
+		current->dfetch.dfetch_addresses = NULL;
 	}
 }
 EXPORT_SYMBOL(dfetch_end_system_call);
 
+/* Enable/Disable DF for the current task.*/
 static long dfetch_ioctl(struct file *filep, unsigned int cmd,
 			 unsigned long unused)
 {
 	switch (cmd) {
 	case DFETCH_ENABLE:
-		/* Enable DF for the current task.*/
-		current->dfetch_enable = true;
+		current->dfetch.dfetch_enable = true;
 		return 0;
 	case DFETCH_DISABLE:
-		current->dfetch_enable = false;
+		current->dfetch.dfetch_enable = false;
 		return 0;
 	default:
 		return -ENOTTY;

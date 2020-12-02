@@ -16,17 +16,27 @@
 #define DFETCH_DISABLE          _IO('c', 255)
 #define BYTE_MAX 256
 
-/*For each address range used by copy functions*/
-struct dfetch_address_range{
+/* For each address range used by copy functions. */
+struct dfetch_address_range {
         const void *start_address;
         unsigned long len;
         unsigned long caller;
         depot_stack_handle_t stack;
 };
 
-struct dfetch_pair{
+struct dfetch_pair {
         int first;
         int second;
+};
+
+struct double_fetch {
+        struct dfetch_address_range *dfetch_addresses;
+	int num_read;
+	int ranges_size;
+	struct dfetch_pair *dfetch_pairs;
+	int dfetch_index;
+	int dfetch_size;
+	bool dfetch_enable;
 };
 
 void dfetch_add_address(const void *addr, size_t len, unsigned long caller, void * kernel_addr);
@@ -39,6 +49,6 @@ void dfetch_start_system_call(void){}
 void dfetch_end_system_call(void){}
 void dfetch_add_address(const void *addr, size_t len, unsigned long caller, void * kernel_addr){}
 
-#endif  /*CONFIG_DF_DETECTION*/
+#endif  /* CONFIG_DF_DETECTION */
 
-#endif /*__LINUX_DOUBLE_FETCH_DETECTION_H__*/
+#endif /* __LINUX_DOUBLE_FETCH_DETECTION_H__ */

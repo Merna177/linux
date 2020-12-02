@@ -942,8 +942,8 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
 	tsk->active_memcg = NULL;
 #endif
 #ifdef CONFIG_DF_DETECTION
-	tsk->dfetch_addresses = NULL;
-	tsk->dfetch_pairs = NULL;
+	tsk->dfetch.dfetch_addresses = NULL;
+	tsk->dfetch.dfetch_pairs = NULL;
 #endif
 	return tsk;
 
@@ -1919,7 +1919,7 @@ static __latent_entropy struct task_struct *copy_process(
 	retval = -ENOMEM;
 	p = dup_task_struct(current, node);
 #ifdef CONFIG_DF_DETECTION
-	p->dfetch_enable = false;
+	p->dfetch.dfetch_enable = false;
 #endif
 	if (!p)
 		goto fork_out;
