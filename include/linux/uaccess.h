@@ -2,6 +2,7 @@
 #ifndef __LINUX_UACCESS_H__
 #define __LINUX_UACCESS_H__
 
+#include <linux/df-detection.h>
 #include <linux/instrumented.h>
 #include <linux/sched.h>
 #include <linux/thread_info.h>
@@ -74,18 +75,26 @@ static inline void force_uaccess_end(mm_segment_t oldfs)
 static __always_inline __must_check unsigned long
 __copy_from_user_inatomic(void *to, const void __user *from, unsigned long n)
 {
+	unsigned long res;
+
 	instrument_copy_from_user(to, from, n);
 	check_object_size(to, n, false);
-	return raw_copy_from_user(to, from, n);
+	res = raw_copy_from_user(to, from, n);
+	dfetch_add_address(from, n - res, _RET_IP_, to);
+	return res;
 }
 
 static __always_inline __must_check unsigned long
 __copy_from_user(void *to, const void __user *from, unsigned long n)
 {
+	unsigned long res;
+
 	might_fault();
 	instrument_copy_from_user(to, from, n);
 	check_object_size(to, n, false);
-	return raw_copy_from_user(to, from, n);
+	res = raw_copy_from_user(to, from, n);
+	dfetch_add_address(from, n - res, _RET_IP_, to);
+	return res;
 }
 
 /**
@@ -127,6 +136,7 @@ _copy_from_user(void *to, const void __user *from, unsigned long n)
 	if (likely(access_ok(from, n))) {
 		instrument_copy_from_user(to, from, n);
 		res = raw_copy_from_user(to, from, n);
+		dfetch_add_address(from, n - res, _RET_IP_, to);
 	}
 	if (unlikely(res))
 		memset(to + (n - res), 0, res);

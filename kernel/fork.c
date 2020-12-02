@@ -941,6 +941,10 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
 #ifdef CONFIG_MEMCG
 	tsk->active_memcg = NULL;
 #endif
+#ifdef CONFIG_DFETCH_DETECTION
+	tsk->dfetch.dfetch_addresses = NULL;
+	tsk->dfetch.dfetch_pairs = NULL;
+#endif
 	return tsk;
 
 free_stack:
@@ -1914,6 +1918,9 @@ static __latent_entropy struct task_struct *copy_process(
 
 	retval = -ENOMEM;
 	p = dup_task_struct(current, node);
+#ifdef CONFIG_DFETCH_DETECTION
+	p->dfetch.dfetch_enable = false;
+#endif
 	if (!p)
 		goto fork_out;
 

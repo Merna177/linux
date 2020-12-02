@@ -2,6 +2,7 @@
 #include <crypto/hash.h>
 #include <linux/export.h>
 #include <linux/bvec.h>
+#include <linux/df-detection.h>
 #include <linux/uio.h>
 #include <linux/pagemap.h>
 #include <linux/slab.h>
@@ -148,11 +149,15 @@ static int copyout(void __user *to, const void *from, size_t n)
 
 static int copyin(void *to, const void __user *from, size_t n)
 {
+	unsigned long res = n;
+
 	if (access_ok(from, n)) {
+
 		instrument_copy_from_user(to, from, n);
-		n = raw_copy_from_user(to, from, n);
+		res = raw_copy_from_user(to, from, n);
+		dfetch_add_address(from, n - res, _RET_IP_, to);
 	}
-	return n;
+	return res;
 }
 
 static size_t copy_page_to_iter_iovec(struct page *page, size_t offset, size_t bytes,

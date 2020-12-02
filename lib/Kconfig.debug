@@ -34,6 +34,9 @@ config PRINTK_CALLER
 	  Since toggling after boot makes the code racy, currently there is
 	  no option to enable/disable at the kernel command line parameter or
 	  sysfs interface.
+	    
+config  DFETCH_DETECTION
+	bool " to detect double fetch"
 
 config CONSOLE_LOGLEVEL_DEFAULT
 	int "Default console loglevel (1-15)"
