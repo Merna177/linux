@@ -11,6 +11,7 @@
 
 #include <asm/current.h>
 
+#include <linux/dfetch-detection.h>
 #include <linux/pid.h>
 #include <linux/sem.h>
 #include <linux/shm.h>
@@ -1315,6 +1316,10 @@ struct task_struct {
 	struct callback_head		mce_kill_me;
 #endif
 
+ /* Needed in double fetch detection buffer to store address ranges. */
+#ifdef CONFIG_DFETCH_DETECTION
+	struct double_fetch dfetch;
+#endif
 	/*
 	 * New fields for task_struct should be added above here, so that
 	 * they are included in the randomized portion of task_struct.
